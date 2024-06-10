@@ -1,7 +1,8 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE calprice
 (
-    t_id int PRIMARY KEY,
+    t_id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     t_price FLOAT NOT NULL,
     user_select JSONB NOT NULL,
     address VARCHAR(13)
@@ -9,8 +10,8 @@ CREATE TABLE calprice
 
 CREATE TABLE orders
 (
-    o_id INT PRIMARY KEY,
-    t_id INT,
+    o_id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    t_id uuid,
     t_price FLOAT,
     status VARCHAR(10),
     create_at TIMESTAMP,

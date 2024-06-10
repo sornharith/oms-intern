@@ -9,7 +9,7 @@ type stockRepository struct {
 	DB *sqlx.DB
 }
 
-func NewStockRepository(db *sqlx.DB) *stockRepository {
+func NewStockRepository(db *sqlx.DB) model.StockRepository {
 	return &stockRepository{
 		DB: db,
 	}

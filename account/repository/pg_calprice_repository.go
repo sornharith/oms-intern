@@ -2,6 +2,8 @@ package repository
 
 import (
 	"encoding/json"
+	"errors"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"log"
@@ -19,9 +21,9 @@ func NewCalPriceRepository(db *sqlx.DB) *calPriceRepository {
 	}
 }
 
-func (r *calPriceRepository) GetByID(id int) (*model.CalPrice, error) {
+func (r *calPriceRepository) GetByID(id uuid.UUID) (*model.CalPrice, error) {
 	var calPrice model.CalPrice
-	err := r.DB.Get(&calPrice, "SELECT * FROM calprice WHERE t_id=$1", id)
+	err := r.DB.Get(&calPrice, "SELECT * FROM calprice WHERE t_id::text=$1", id)
 	if err != nil {
 		log.Printf("error on querying calprice %v", err.Error())
 		return nil, err
@@ -32,6 +34,7 @@ func (r *calPriceRepository) GetByID(id int) (*model.CalPrice, error) {
 func (r *calPriceRepository) Update(calPrice *model.CalPrice) error {
 	query := "UPDATE calprice SET t_price=$1, user_select=$2 WHERE t_id=$3"
 	_, err := r.DB.Exec(query, calPrice.TPrice, calPrice.UserSelect, calPrice.TID)
+
 	return err
 }
 
@@ -48,7 +51,7 @@ func (r *calPriceRepository) CalculateTotalPrice(userSelect []map[string]interfa
 		amount := int(item["amount"].(float64))
 
 		if err := r.DB.Get(&price, "SELECT p_price FROM products WHERE p_id = $1", productID); err != nil {
-			return 0, err
+			return 0, errors.New("product not found")
 		}
 
 		totalPrice += price * float64(amount)
@@ -62,8 +65,8 @@ func (r *calPriceRepository) CreateCalPrice(calPrice *model.CalPrice) error {
 	if err != nil {
 		return err
 	}
-	query := "INSERT INTO calprice (t_id,t_price, user_select,address) VALUES ($1, $2, $3, $4) RETURNING t_id"
-	if err := r.DB.QueryRow(query, calPrice.TID, calPrice.TPrice, userSelectJSON, calPrice.Address).Scan(&calPrice.TID); err != nil {
+	query := "INSERT INTO calprice (t_price, user_select,address) VALUES ($1, $2, $3) RETURNING t_id"
+	if err := r.DB.QueryRow(query, calPrice.TPrice, userSelectJSON, calPrice.Address).Scan(&calPrice.TID); err != nil {
 		// check unique constraint
 		if err, ok := err.(*pq.Error); ok && err.Code.Name() == "unique_violation" {
 			log.Printf("Could not create a user with id: %v. Reason: %v\n", calPrice.TID, err.Code.Name())

@@ -1,10 +1,13 @@
 package model
 
-import "time"
+import (
+	"github.com/google/uuid"
+	"time"
+)
 
 type Order struct {
-	OID       int       `db:"o_id" json:"o_id"`
-	TID       int       `db:"t_id" json:"t_id"`
+	OID       uuid.UUID `db:"o_id" json:"o_id"`
+	TID       uuid.UUID `db:"t_id" json:"t_id"`
 	TPrice    float64   `db:"t_price" json:"t_price"`
 	Status    string    `db:"status" json:"status"`
 	CreatedAt time.Time `db:"create_at" json:"create_at"`

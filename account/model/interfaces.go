@@ -21,14 +21,14 @@ type UserRepository interface {
 }
 
 type CalPriceService interface {
-	GetCalPriceByID(id int) (*CalPrice, error)
+	GetCalPriceByID(id uuid.UUID) (*CalPrice, error)
 	CreateCalPrice(userSelect *CalPrice) (*CalPrice, error)
 	UpdateCalPrice(calPrice *CalPrice) error
 	DeleteCalPrice(id int) error
 }
 
 type CalPriceRepository interface {
-	GetByID(id int) (*CalPrice, error)
+	GetByID(id uuid.UUID) (*CalPrice, error)
 	Update(calPrice *CalPrice) error
 	Delete(id int) error
 	CalculateTotalPrice(userSelect []map[string]interface{}) (float64, error)
@@ -36,14 +36,14 @@ type CalPriceRepository interface {
 }
 
 type OrderService interface {
-	GetOrderByID(id int) (*Order, error)
-	CreateOrder(tID int) (*Order, error)
-	UpdateOrderStatus(o_id int, status string) error
+	GetOrderByID(id uuid.UUID) (*Order, error)
+	CreateOrder(tID uuid.UUID) (*Order, error)
+	UpdateOrderStatus(o_id uuid.UUID, status string) error
 	DeleteOrder(id int) error
 }
 
 type OrderRepository interface {
-	GetByID(id int) (*Order, error)
+	GetByID(id uuid.UUID) (*Order, error)
 	Create(order *Order) error
 	Update(order *Order) error
 	Delete(id int) error
@@ -51,6 +51,10 @@ type OrderRepository interface {
 }
 
 type ProductRepository interface {
+}
+
+type StockService interface {
+	GetStockByID(id int) (*Stock, error)
 }
 
 type StockRepository interface {

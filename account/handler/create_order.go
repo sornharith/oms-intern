@@ -2,11 +2,12 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"net/http"
 )
 
 type CreateOrderInput struct {
-	TID int `json:"t_id"`
+	TID uuid.UUID `json:"t_id"`
 }
 
 func (h *Handler) CreateOrder(c *gin.Context) {
@@ -23,5 +24,5 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, order)
+	c.JSON(http.StatusCreated, order)
 }

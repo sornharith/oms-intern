@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"github.com/google/uuid"
 	"log"
 	"memrizr/account/model"
 	"strconv"
@@ -32,7 +33,7 @@ func NewCreateOrderUsecase(c *CreateOrderconfig) model.OrderService {
 	}
 }
 
-func (u *createOrderUsecase) CreateOrder(tID int) (*model.Order, error) {
+func (u *createOrderUsecase) CreateOrder(tID uuid.UUID) (*model.Order, error) {
 	// Get transaction details
 	calPrice, err := u.calPriceRepo.GetByID(tID)
 	if err != nil {
@@ -59,7 +60,7 @@ func (u *createOrderUsecase) CreateOrder(tID int) (*model.Order, error) {
 		}
 
 		if stock.Quantity < amount {
-			return nil, errors.New("insufficient stock for product ID: " + strconv.Itoa(productID))
+			return nil, errors.New(`insufficient stock for product ID: ` + strconv.Itoa(productID) + ``)
 		}
 	}
 
@@ -67,11 +68,10 @@ func (u *createOrderUsecase) CreateOrder(tID int) (*model.Order, error) {
 	order := &model.Order{
 		TID:       tID,
 		TPrice:    float64(int(calPrice.TPrice)),
-		Status:    "new",
+		Status:    "New",
 		CreatedAt: time.Now(),
 		LastEdit:  time.Now(),
 	}
-	order.OID = orderId
 	if err := u.orderRepo.CreateOrder(order); err != nil {
 		return nil, err
 	}
@@ -84,14 +84,13 @@ func (u *createOrderUsecase) CreateOrder(tID int) (*model.Order, error) {
 			return nil, err
 		}
 	}
-	orderId += 1
 	return order, nil
 }
-func (u *createOrderUsecase) GetOrderByID(id int) (*model.Order, error) {
+func (u *createOrderUsecase) GetOrderByID(id uuid.UUID) (*model.Order, error) {
 	return u.orderRepo.GetByID(id)
 }
 
-func (u *createOrderUsecase) UpdateOrderStatus(o_id int, status string) error {
+func (u *createOrderUsecase) UpdateOrderStatus(o_id uuid.UUID, status string) error {
 	order, err := u.orderRepo.GetByID(o_id)
 	if err != nil {
 		log.Printf("error getting order by id %d", o_id)
