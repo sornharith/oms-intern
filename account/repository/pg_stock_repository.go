@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"github.com/jmoiron/sqlx"
 	"memrizr/account/model"
 )
@@ -24,7 +25,33 @@ func (r *stockRepository) GetStockByProductID(productID int) (*model.Stock, erro
 }
 
 func (r *stockRepository) DeductStock(productID int, amount int) error {
-	_, err := r.DB.Exec(`UPDATE stocks SET quantity = quantity - $1 
-                         WHERE s_id = (SELECT s_id FROM products WHERE p_id = $2)`, amount, productID)
+	query := `UPDATE stocks
+              SET quantity = quantity - $1
+              WHERE s_id = (SELECT s_id FROM products WHERE p_id = $2)
+              AND quantity >= $1`
+
+	res, err := r.DB.Exec(query, amount, productID)
+	if err != nil {
+		return err
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected == 0 {
+		return errors.New("insufficient stock")
+	}
+
+	return nil
+}
+
+func (r *stockRepository) AddStock(productID int, amount int) error {
+	query := `UPDATE stocks
+              SET quantity = quantity + $1
+              WHERE s_id = (SELECT s_id FROM products WHERE p_id = $2)`
+
+	_, err := r.DB.Exec(query, amount, productID)
 	return err
 }

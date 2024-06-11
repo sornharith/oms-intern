@@ -3,8 +3,6 @@ package service
 import (
 	"encoding/json"
 	"github.com/google/uuid"
-	"log"
-
 	"memrizr/account/model"
 	apperror "memrizr/account/model/apperrors"
 )
@@ -43,21 +41,20 @@ func (u *calPriceUsecase) CreateCalPrice(calPrice *model.CalPrice) (*model.CalPr
 	if err := json.Unmarshal([]byte(calPrice.UserSelect), &userSelect); err != nil {
 		return nil, err
 	}
-	log.Printf("unmarshal userSelect %d", userSelect)
 
 	// Calculate total price
 	totalPrice, err := u.calPriceRepo.CalculateTotalPrice(userSelect)
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO: fix the error code from now is 500 to be 400
-	if calPrice.Address == "Dominstic" {
-		totalPrice += 50
-	} else if calPrice.Address == "International" {
-		totalPrice += 100
-	} else {
-		return nil, apperror.NewBadRequest("incorrect address")
+	// adding the address price to the total price
+	switch calPrice.Address {
+	case model.AddressDomestic:
+		totalPrice += model.PriceDomestic
+	case model.AddressInternational:
+		totalPrice += model.PriceInternational
+	default:
+		return nil, apperror.NewBadRequest("Incorrect address")
 	}
 
 	// Update the CalPrice entity with the calculated total price

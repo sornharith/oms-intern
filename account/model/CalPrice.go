@@ -8,3 +8,8 @@ type CalPrice struct {
 	UserSelect string    `db:"user_select"`
 	Address    string    `db:"address"`
 }
+
+type UserSelectItem struct {
+	ProductID int `json:"product_id"`
+	Amount    int `json:"amount"`
+}

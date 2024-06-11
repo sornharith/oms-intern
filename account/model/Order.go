@@ -13,3 +13,7 @@ type Order struct {
 	CreatedAt time.Time `db:"create_at" json:"create_at"`
 	LastEdit  time.Time `db:"last_edit" json:"last_edit"`
 }
+
+const (
+	OrderStatusNew = "new"
+)

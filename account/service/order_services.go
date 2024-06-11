@@ -34,56 +34,58 @@ func NewCreateOrderUsecase(c *CreateOrderconfig) model.OrderService {
 }
 
 func (u *createOrderUsecase) CreateOrder(tID uuid.UUID) (*model.Order, error) {
-	// Get transaction details
+	// Fetch transaction details
 	calPrice, err := u.calPriceRepo.GetByID(tID)
 	if err != nil {
 		return nil, err
 	}
-	unescaped := strings.Trim(calPrice.UserSelect, "\"")
-	user_select := strings.ReplaceAll(unescaped, `\"`, `"`)
 
-	// Check stock for each product in user select
-	var userSelect []map[string]interface{}
-	if err := json.Unmarshal([]byte(user_select), &userSelect); err != nil {
-		log.Printf(`error unmarshalling user select %s`, err)
+	// Parse user_select
+	unescaped := strings.Trim(calPrice.UserSelect, "\"")
+	userSelectJSON := strings.ReplaceAll(unescaped, `\"`, `"`)
+
+	var userSelect []model.UserSelectItem
+	if err := json.Unmarshal([]byte(userSelectJSON), &userSelect); err != nil {
+		log.Printf("error unmarshalling user select %s", err)
 		return nil, errors.New("unable to parse user select")
 	}
 
-	// TODO: check race condition by update the date to check
+	// for rollback deduction
+	type deduction struct {
+		ProductID int
+		Amount    int
+	}
+	var deductions []deduction
+
 	for _, item := range userSelect {
-		productID := int(item["product_id"].(float64))
-		amount := int(item["amount"].(float64))
+		productID := item.ProductID
+		amount := item.Amount
 
-		stock, err := u.stockRepo.GetStockByProductID(productID)
-		if err != nil {
-			return nil, err
+		if err := u.stockRepo.DeductStock(productID, amount); err != nil {
+			for _, d := range deductions {
+				if err := u.stockRepo.AddStock(d.ProductID, d.Amount); err != nil {
+					log.Printf("failed to rollback stock for product ID %d: %s", d.ProductID, err)
+				}
+			}
+			return nil, errors.New("insufficient stock for product ID: " + strconv.Itoa(productID))
 		}
-
-		if stock.Quantity < amount {
-			return nil, errors.New(`insufficient stock for product ID: ` + strconv.Itoa(productID) + ``)
-		}
+		// Record successful deduction
+		deductions = append(deductions, deduction{ProductID: productID, Amount: amount})
 	}
 
-	// Create order
+	// Create the order
 	order := &model.Order{
 		TID:       tID,
-		TPrice:    float64(int(calPrice.TPrice)),
-		Status:    "New",
+		TPrice:    calPrice.TPrice,
+		Status:    model.OrderStatusNew,
 		CreatedAt: time.Now(),
 		LastEdit:  time.Now(),
 	}
+
 	if err := u.orderRepo.CreateOrder(order); err != nil {
 		return nil, err
 	}
-	// Deduct stock
-	for _, item := range userSelect {
-		productID := int(item["product_id"].(float64))
-		amount := int(item["amount"].(float64))
 
-		if err := u.stockRepo.DeductStock(productID, amount); err != nil {
-			return nil, err
-		}
-	}
 	return order, nil
 }
 func (u *createOrderUsecase) GetOrderByID(id uuid.UUID) (*model.Order, error) {

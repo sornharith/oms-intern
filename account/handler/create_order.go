@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"log"
 	"net/http"
 )
 
@@ -18,6 +19,7 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		return
 	}
 
+	log.Println("from t_id", input.TID)
 	order, err := h.OrderService.CreateOrder(input.TID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
