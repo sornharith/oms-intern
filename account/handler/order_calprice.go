@@ -3,7 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"memrizr/account/model"
+	"memrizr/account/entity"
 	"net/http"
 )
 
@@ -16,11 +16,12 @@ func (h *Handler) CreateCalPrice(c *gin.Context) {
 	var input CreateCalPriceInput
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid error input"})
 		return
 	}
 	if len(input.UserSelect) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product"})
+		return
 	}
 	// Convert UserSelect to JSON string
 	userSelectJSON, err := json.Marshal(input.UserSelect)
@@ -30,7 +31,7 @@ func (h *Handler) CreateCalPrice(c *gin.Context) {
 	}
 
 	// Convert payload to domain model
-	calPrice := model.CalPrice{
+	calPrice := entity.CalPrice{
 		UserSelect: string(userSelectJSON),
 		Address:    input.Address,
 	}

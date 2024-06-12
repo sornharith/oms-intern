@@ -3,12 +3,12 @@ package repository
 import (
 	"context"
 	"log"
+	"memrizr/account/entity"
+	"memrizr/account/entity/apperrors"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"memrizr/account/model"
-	"memrizr/account/model/apperrors"
 )
 
 // PGUserRepository is data/repository implementation
@@ -18,14 +18,14 @@ type PGUserRepository struct {
 }
 
 // NewUserRepository is a factory for initializing User Repositories
-func NewUserRepository(db *sqlx.DB) model.UserRepository {
+func NewUserRepository(db *sqlx.DB) entity.UserRepository {
 	return &PGUserRepository{
 		DB: db,
 	}
 }
 
 // Create reaches out to database SQLX api
-func (r *PGUserRepository) Create(ctx context.Context, u *model.User) error {
+func (r *PGUserRepository) Create(ctx context.Context, u *entity.User) error {
 	query := "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *"
 
 	if err := r.DB.Get(u, query, u.Email, u.Password); err != nil {
@@ -42,8 +42,8 @@ func (r *PGUserRepository) Create(ctx context.Context, u *model.User) error {
 }
 
 // FindByID fetches user by id
-func (r *PGUserRepository) FindByID(ctx context.Context, uid uuid.UUID) (*model.User, error) {
-	user := &model.User{}
+func (r *PGUserRepository) FindByID(ctx context.Context, uid uuid.UUID) (*entity.User, error) {
+	user := &entity.User{}
 
 	query := "SELECT * FROM users WHERE uid=$1"
 

@@ -3,7 +3,6 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"log"
 	"net/http"
 )
 
@@ -15,14 +14,17 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 	var input CreateOrderInput
 
 	if err := c.ShouldBindJSON(&input); err != nil {
+		if err.Error() == "invalid UUID length: 35" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+			return
+		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	log.Println("from t_id", input.TID)
 	order, err := h.OrderService.CreateOrder(input.TID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 

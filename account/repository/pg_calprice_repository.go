@@ -1,14 +1,16 @@
 package repository
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"log"
-	"memrizr/account/model"
-	apperror "memrizr/account/model/apperrors"
+	"memrizr/account/entity"
+	"memrizr/account/entity/apperrors"
 )
 
 type calPriceRepository struct {
@@ -21,17 +23,20 @@ func NewCalPriceRepository(db *sqlx.DB) *calPriceRepository {
 	}
 }
 
-func (r *calPriceRepository) GetByID(id uuid.UUID) (*model.CalPrice, error) {
-	var calPrice model.CalPrice
+func (r *calPriceRepository) GetByID(id uuid.UUID) (*entity.CalPrice, error) {
+	var calPrice entity.CalPrice
 	err := r.DB.Get(&calPrice, "SELECT * FROM calprice WHERE t_id::text=$1", id)
 	if err != nil {
-		log.Printf("error on querying calprice %v", err.Error())
-		return nil, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("the calculate price not found with the provided ID")
+		}
+		return nil, fmt.Errorf("error on querying calprice: %w", err)
 	}
+
 	return &calPrice, nil
 }
 
-func (r *calPriceRepository) Update(calPrice *model.CalPrice) error {
+func (r *calPriceRepository) Update(calPrice *entity.CalPrice) error {
 	query := "UPDATE calprice SET t_price=$1, user_select=$2 WHERE t_id=$3"
 	_, err := r.DB.Exec(query, calPrice.TPrice, calPrice.UserSelect, calPrice.TID)
 
@@ -60,7 +65,7 @@ func (r *calPriceRepository) CalculateTotalPrice(userSelect []map[string]interfa
 	return totalPrice, nil
 }
 
-func (r *calPriceRepository) CreateCalPrice(calPrice *model.CalPrice) error {
+func (r *calPriceRepository) CreateCalPrice(calPrice *entity.CalPrice) error {
 	userSelectJSON, err := json.Marshal(calPrice.UserSelect)
 	if err != nil {
 		return err

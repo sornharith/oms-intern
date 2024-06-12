@@ -3,29 +3,29 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"memrizr/account/model"
+	"memrizr/account/entity"
 	"net/http"
 	"strconv"
 )
 
 // Handler struct holds required services for handler to function
 type Handler struct {
-	UserService     model.UserService
-	CalpriceService model.CalPriceService
-	ProductService  model.ProductRepository
-	OrderService    model.OrderService
-	StockService    model.StockService
+	UserService     entity.UserService
+	CalpriceService entity.CalPriceService
+	ProductService  entity.ProductRepository
+	OrderService    entity.OrderService
+	StockService    entity.StockService
 }
 
 // Config will hold services that will eventually be injected into this
 // handler layer on handler initialization
 type Config struct {
 	R               *gin.Engine
-	UserService     model.UserService
-	CalpriceService model.CalPriceService
-	ProductService  model.ProductRepository
-	OrderService    model.OrderService
-	StockService    model.StockService
+	UserService     entity.UserService
+	CalpriceService entity.CalPriceService
+	ProductService  entity.ProductRepository
+	OrderService    entity.OrderService
+	StockService    entity.StockService
 }
 
 // NewHandler initializes the handler with required injected services along with http routes
@@ -53,17 +53,22 @@ func NewHandler(c *Config) {
 	g.POST("/order", h.CreateOrder)
 	g.PATCH("/order/status/:o_id", h.UpdateOrderStatus)
 
+	g.NoRoute(func(c *gin.Context) {
+		c.JSON(404, gin.H{"message": "Page not found"})
+	})
+
 }
 
 func (h *Handler) GettransactionbyID(c *gin.Context) {
 	tid := c.Param("t_id")
 	id, err := uuid.Parse(tid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid orderid"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
 	calp, err := h.CalpriceService.GetCalPriceByID(id)
 	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -82,6 +87,7 @@ func (h *Handler) GetStockbyid(c *gin.Context) {
 	stock, err := h.StockService.GetStockByID(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"Stock information": stock,

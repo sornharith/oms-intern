@@ -1,4 +1,4 @@
-package model
+package entity
 
 import (
 	"github.com/google/uuid"
@@ -15,5 +15,8 @@ type Order struct {
 }
 
 const (
-	OrderStatusNew = "new"
+	OrderStatusNew        = "New"
+	OrderStatusPaid       = "Paid"
+	OrderStatusProcessing = "Processing"
+	OrderStatusDone       = "Done"
 )

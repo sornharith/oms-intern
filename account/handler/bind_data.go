@@ -2,10 +2,10 @@ package handler
 
 import (
 	"log"
+	"memrizr/account/entity/apperrors"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"memrizr/account/model/apperrors"
 )
 
 // used to help extract validation errors

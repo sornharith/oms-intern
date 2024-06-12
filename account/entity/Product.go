@@ -1,4 +1,4 @@
-package model
+package entity
 
 type Product struct {
 	PID    int     `db:"p_id" json:"p_id"`

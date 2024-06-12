@@ -5,27 +5,28 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"log"
-	"memrizr/account/model"
+	"memrizr/account/entity"
+	service "memrizr/account/service/model"
 	"strconv"
 	"strings"
 	"time"
 )
 
 type createOrderUsecase struct {
-	calPriceRepo model.CalPriceRepository
-	orderRepo    model.OrderRepository
-	stockRepo    model.StockRepository
+	calPriceRepo entity.CalPriceRepository
+	orderRepo    entity.OrderRepository
+	stockRepo    entity.StockRepository
 }
 
 type CreateOrderconfig struct {
-	CalPriceRepo model.CalPriceRepository
-	OrderRepo    model.OrderRepository
-	StockRepo    model.StockRepository
+	CalPriceRepo entity.CalPriceRepository
+	OrderRepo    entity.OrderRepository
+	StockRepo    entity.StockRepository
 }
 
 var orderId = 3
 
-func NewCreateOrderUsecase(c *CreateOrderconfig) model.OrderService {
+func NewCreateOrderUsecase(c *CreateOrderconfig) entity.OrderService {
 	return &createOrderUsecase{
 		calPriceRepo: c.CalPriceRepo,
 		orderRepo:    c.OrderRepo,
@@ -33,7 +34,7 @@ func NewCreateOrderUsecase(c *CreateOrderconfig) model.OrderService {
 	}
 }
 
-func (u *createOrderUsecase) CreateOrder(tID uuid.UUID) (*model.Order, error) {
+func (u *createOrderUsecase) CreateOrder(tID uuid.UUID) (*entity.Order, error) {
 	// Fetch transaction details
 	calPrice, err := u.calPriceRepo.GetByID(tID)
 	if err != nil {
@@ -44,10 +45,9 @@ func (u *createOrderUsecase) CreateOrder(tID uuid.UUID) (*model.Order, error) {
 	unescaped := strings.Trim(calPrice.UserSelect, "\"")
 	userSelectJSON := strings.ReplaceAll(unescaped, `\"`, `"`)
 
-	var userSelect []model.UserSelectItem
+	var userSelect []entity.UserSelectItem
 	if err := json.Unmarshal([]byte(userSelectJSON), &userSelect); err != nil {
-		log.Printf("error unmarshalling user select %s", err)
-		return nil, errors.New("unable to parse user select")
+		return nil, errors.New("unable to parse user select: " + err.Error())
 	}
 
 	// for rollback deduction
@@ -62,22 +62,24 @@ func (u *createOrderUsecase) CreateOrder(tID uuid.UUID) (*model.Order, error) {
 		amount := item.Amount
 
 		if err := u.stockRepo.DeductStock(productID, amount); err != nil {
+			// Rollback deductions
 			for _, d := range deductions {
 				if err := u.stockRepo.AddStock(d.ProductID, d.Amount); err != nil {
 					log.Printf("failed to rollback stock for product ID %d: %s", d.ProductID, err)
 				}
 			}
-			return nil, errors.New("insufficient stock for product ID: " + strconv.Itoa(productID))
+			log.Println("insufficient stock for product ID: " + strconv.Itoa(productID))
+			return nil, errors.New("please check your stock")
 		}
 		// Record successful deduction
 		deductions = append(deductions, deduction{ProductID: productID, Amount: amount})
 	}
 
 	// Create the order
-	order := &model.Order{
+	order := &entity.Order{
 		TID:       tID,
 		TPrice:    calPrice.TPrice,
-		Status:    model.OrderStatusNew,
+		Status:    entity.OrderStatusNew,
 		CreatedAt: time.Now(),
 		LastEdit:  time.Now(),
 	}
@@ -88,7 +90,7 @@ func (u *createOrderUsecase) CreateOrder(tID uuid.UUID) (*model.Order, error) {
 
 	return order, nil
 }
-func (u *createOrderUsecase) GetOrderByID(id uuid.UUID) (*model.Order, error) {
+func (u *createOrderUsecase) GetOrderByID(id uuid.UUID) (*entity.Order, error) {
 	return u.orderRepo.GetByID(id)
 }
 
@@ -98,9 +100,9 @@ func (u *createOrderUsecase) UpdateOrderStatus(o_id uuid.UUID, status string) er
 		log.Printf("error getting order by id %d", o_id)
 		return errors.New("invalid input")
 	}
-	if order.Status == "New" && status == "Paid" {
+	if order.Status == entity.OrderStatusNew && status == entity.OrderStatusPaid {
 		order.Status = status
-	} else if order.Status == "Paid" || order.Status == "Processing" {
+	} else if isValidStatus(service.OrderStatus(status)) {
 		order.Status = status
 	} else {
 		return errors.New("invalid order status")
@@ -111,6 +113,12 @@ func (u *createOrderUsecase) UpdateOrderStatus(o_id uuid.UUID, status string) er
 		return err
 	}
 	return nil
+}
+
+func isValidStatus(status service.OrderStatus) bool {
+	return status == entity.OrderStatusPaid ||
+		status == entity.OrderStatusProcessing ||
+		status == entity.OrderStatusDone
 }
 
 func (u *createOrderUsecase) DeleteOrder(id int) error {

@@ -3,8 +3,8 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"log"
-	"memrizr/account/model"
-	"memrizr/account/model/apperrors"
+	"memrizr/account/entity"
+	"memrizr/account/entity/apperrors"
 )
 
 // signupReq is not exported, hence the lowercase name
@@ -25,7 +25,7 @@ func (h *Handler) Signup(c *gin.Context) {
 		return
 	}
 
-	u := &model.User{
+	u := &entity.User{
 		Email:    req.Email,
 		Password: req.Password,
 	}

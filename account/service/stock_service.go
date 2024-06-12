@@ -1,23 +1,23 @@
 package service
 
 import (
-	"memrizr/account/model"
+	"memrizr/account/entity"
 )
 
 type stockService struct {
-	StockRepository model.StockRepository
+	StockRepository entity.StockRepository
 }
 
 type StockConfig struct {
-	StockRepository model.StockRepository
+	StockRepository entity.StockRepository
 }
 
-func NewStockService(c *StockConfig) model.StockService {
+func NewStockService(c *StockConfig) entity.StockService {
 	return &stockService{
 		StockRepository: c.StockRepository,
 	}
 }
 
-func (s stockService) GetStockByID(id int) (*model.Stock, error) {
+func (s stockService) GetStockByID(id int) (*entity.Stock, error) {
 	return s.StockRepository.GetStockByProductID(id)
 }

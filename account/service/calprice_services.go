@@ -3,31 +3,35 @@ package service
 import (
 	"encoding/json"
 	"github.com/google/uuid"
-	"memrizr/account/model"
-	apperror "memrizr/account/model/apperrors"
+	"memrizr/account/entity"
+	"memrizr/account/entity/apperrors"
 )
 
 type calPriceUsecase struct {
-	calPriceRepo model.CalPriceRepository
-	productRepo  model.ProductRepository
+	calPriceRepo entity.CalPriceRepository
+	productRepo  entity.ProductRepository
 }
 type CalpConfig struct {
-	CalPriceRepo model.CalPriceRepository
-	ProductRepo  model.ProductRepository
+	CalPriceRepo entity.CalPriceRepository
+	ProductRepo  entity.ProductRepository
 }
 
-func NewCalPriceUsecase(c *CalpConfig) model.CalPriceService {
+func NewCalPriceUsecase(c *CalpConfig) entity.CalPriceService {
 	return &calPriceUsecase{
 		calPriceRepo: c.CalPriceRepo,
 		productRepo:  c.ProductRepo,
 	}
 }
 
-func (u *calPriceUsecase) GetCalPriceByID(id uuid.UUID) (*model.CalPrice, error) {
-	return u.calPriceRepo.GetByID(id)
+func (u *calPriceUsecase) GetCalPriceByID(id uuid.UUID) (*entity.CalPrice, error) {
+	res, err := u.calPriceRepo.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
-func (u *calPriceUsecase) UpdateCalPrice(calPrice *model.CalPrice) error {
+func (u *calPriceUsecase) UpdateCalPrice(calPrice *entity.CalPrice) error {
 	return u.calPriceRepo.Update(calPrice)
 }
 
@@ -35,7 +39,7 @@ func (u *calPriceUsecase) DeleteCalPrice(id int) error {
 	return u.calPriceRepo.Delete(id)
 }
 
-func (u *calPriceUsecase) CreateCalPrice(calPrice *model.CalPrice) (*model.CalPrice, error) {
+func (u *calPriceUsecase) CreateCalPrice(calPrice *entity.CalPrice) (*entity.CalPrice, error) {
 	// Convert UserSelect JSON string back to []map[string]interface{}
 	var userSelect []map[string]interface{}
 	if err := json.Unmarshal([]byte(calPrice.UserSelect), &userSelect); err != nil {
@@ -49,10 +53,10 @@ func (u *calPriceUsecase) CreateCalPrice(calPrice *model.CalPrice) (*model.CalPr
 	}
 	// adding the address price to the total price
 	switch calPrice.Address {
-	case model.AddressDomestic:
-		totalPrice += model.PriceDomestic
-	case model.AddressInternational:
-		totalPrice += model.PriceInternational
+	case entity.AddressDomestic:
+		totalPrice += entity.PriceDomestic
+	case entity.AddressInternational:
+		totalPrice += entity.PriceInternational
 	default:
 		return nil, apperror.NewBadRequest("Incorrect address")
 	}
