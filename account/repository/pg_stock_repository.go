@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"memrizr/account/entity"
 )
@@ -57,4 +58,27 @@ func (r *stockRepository) AddStock(productID int, amount int) error {
 
 	_, err := r.DB.Exec(query, amount, productID)
 	return err
+}
+
+func (r *stockRepository) UpdateStock(StockId int, amount int) error {
+	// Corrected SQL query with parameters in the right order
+	query := `UPDATE stocks SET quantity = $1 WHERE s_id = $2`
+
+	// Execute the query with the correct parameter order
+	result, err := r.DB.Exec(query, amount, StockId)
+	if err != nil {
+		return fmt.Errorf("error updating stock: %w", err)
+	}
+
+	// Check if any rows were affected by the update
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("error checking rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("no stock found with the given ID or no update needed")
+	}
+
+	return nil
 }

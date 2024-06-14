@@ -44,6 +44,10 @@ func inject(d *dataSources) (*gin.Engine, error) {
 	stockService := service.NewStockService(&service.StockConfig{
 		StockRepository: stockRepo,
 	})
+
+	productService := service.NewProductService(&service.ProductConfig{
+		ProductRepository: productRepo,
+	})
 	// initialize gin.Engine
 	router := gin.Default()
 
@@ -51,6 +55,7 @@ func inject(d *dataSources) (*gin.Engine, error) {
 		R:               router,
 		UserService:     userService,
 		CalpriceService: calPriceService,
+		ProductService:  productService,
 		OrderService:    orderService,
 		StockService:    stockService,
 	})

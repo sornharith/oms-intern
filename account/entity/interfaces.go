@@ -2,6 +2,7 @@ package entity
 
 import (
 	"context"
+	service "memrizr/account/service/model"
 
 	"github.com/google/uuid"
 )
@@ -49,16 +50,21 @@ type OrderRepository interface {
 	Delete(id int) error
 	CreateOrder(order *Order) error
 }
-
+type ProductService interface {
+	GetallProductwithstock() ([]service.ProductStock, error)
+}
 type ProductRepository interface {
+	GetallProductStock() ([]service.ProductStock, error)
 }
 
 type StockService interface {
 	GetStockByID(id int) (*Stock, error)
+	UpdateStockById(stock *Stock) error
 }
 
 type StockRepository interface {
 	GetStockByProductID(productID int) (*Stock, error)
 	DeductStock(productID int, amount int) error
 	AddStock(productID int, amount int) error
+	UpdateStock(StockId int, amount int) error
 }

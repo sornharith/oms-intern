@@ -21,3 +21,7 @@ func NewStockService(c *StockConfig) entity.StockService {
 func (s stockService) GetStockByID(id int) (*entity.Stock, error) {
 	return s.StockRepository.GetStockByProductID(id)
 }
+
+func (s stockService) UpdateStockById(stock *entity.Stock) error {
+	return s.StockRepository.UpdateStock(stock.SID, stock.Quantity)
+}

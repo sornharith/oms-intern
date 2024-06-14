@@ -12,7 +12,7 @@ import (
 type Handler struct {
 	UserService     entity.UserService
 	CalpriceService entity.CalPriceService
-	ProductService  entity.ProductRepository
+	ProductService  entity.ProductService
 	OrderService    entity.OrderService
 	StockService    entity.StockService
 }
@@ -23,7 +23,7 @@ type Config struct {
 	R               *gin.Engine
 	UserService     entity.UserService
 	CalpriceService entity.CalPriceService
-	ProductService  entity.ProductRepository
+	ProductService  entity.ProductService
 	OrderService    entity.OrderService
 	StockService    entity.StockService
 }
@@ -46,6 +46,9 @@ func NewHandler(c *Config) {
 	g.GET("/me", h.Me)
 	// for the stock
 	g.GET("/stock/:p_id", h.GetStockbyid)
+	g.PATCH("/stock/:p_id", h.updateStock)
+	// for prduct
+	g.GET("/products", h.getproduct)
 	// for the calprice
 	g.GET("/transaction/:t_id", h.GettransactionbyID)
 	g.POST("/order/calculate", h.CreateCalPrice)
@@ -71,13 +74,17 @@ func (h *Handler) GettransactionbyID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"Transaction information": calp,
 	})
 }
 
 func (h *Handler) GetStockbyid(c *gin.Context) {
+	type Stockoutput struct {
+		Product_id int `json:"product_id"`
+		Stock_id   int `json:"stock_id"`
+		Quantity   int `json:"quantity"`
+	}
 	pid := c.Param("p_id")
 	id, err := strconv.Atoi(pid)
 	if err != nil {
@@ -89,8 +96,23 @@ func (h *Handler) GetStockbyid(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	stockresponse := Stockoutput{
+		Product_id: id,
+		Stock_id:   stock.SID,
+		Quantity:   stock.Quantity,
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"Stock information": stock,
+		"Stock information": stockresponse,
 	})
+}
 
+func (h *Handler) getproduct(c *gin.Context) {
+	product, err := h.ProductService.GetallProductwithstock()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"products": product,
+	})
 }
