@@ -64,7 +64,7 @@ type StockService interface {
 
 type StockRepository interface {
 	GetStockByProductID(productID int) (*Stock, error)
-	DeductStock(productID int, amount int) error
+	DeductStockBulk(deductions map[int]int) error
 	AddStock(productID int, amount int) error
 	UpdateStock(StockId int, amount int) error
 }

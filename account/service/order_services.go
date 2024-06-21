@@ -7,7 +7,6 @@ import (
 	"log"
 	"memrizr/account/entity"
 	service "memrizr/account/service/model"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -50,31 +49,43 @@ func (u *createOrderUsecase) CreateOrder(tID uuid.UUID) (*entity.Order, error) {
 		return nil, errors.New("unable to parse user select: " + err.Error())
 	}
 
-	// for rollback deduction
-	type deduction struct {
-		ProductID int
-		Amount    int
-	}
-	var deductions []deduction
+	//// for rollback deduction
+	//type deduction struct {
+	//	ProductID int
+	//	Amount    int
+	//}
+	//var deductions []deduction
+	//
+	//for _, item := range userSelect {
+	//	productID := item.ProductID
+	//	amount := item.Amount
+	//
+	//	if err := u.stockRepo.DeductStock(productID, amount); err != nil {
+	//		// Rollback deductions
+	//		for _, d := range deductions {
+	//			if err := u.stockRepo.AddStock(d.ProductID, d.Amount); err != nil {
+	//				log.Printf("failed to rollback stock for product ID %d: %s", d.ProductID, err)
+	//			}
+	//		}
+	//		log.Println("insufficient stock for product ID: " + strconv.Itoa(productID))
+	//		return nil, errors.New("please check your stock")
+	//	}
+	//	// Record successful deduction
+	//	deductions = append(deductions, deduction{ProductID: productID, Amount: amount})
+	//}
 
+	// Prepare the deductions
+	deductions := make(map[int]int)
 	for _, item := range userSelect {
 		productID := item.ProductID
 		amount := item.Amount
-
-		if err := u.stockRepo.DeductStock(productID, amount); err != nil {
-			// Rollback deductions
-			for _, d := range deductions {
-				if err := u.stockRepo.AddStock(d.ProductID, d.Amount); err != nil {
-					log.Printf("failed to rollback stock for product ID %d: %s", d.ProductID, err)
-				}
-			}
-			log.Println("insufficient stock for product ID: " + strconv.Itoa(productID))
-			return nil, errors.New("please check your stock")
-		}
-		// Record successful deduction
-		deductions = append(deductions, deduction{ProductID: productID, Amount: amount})
+		deductions[productID] = amount
 	}
 
+	// Attempt to deduct stock in bulk
+	if err := u.stockRepo.DeductStockBulk(deductions); err != nil {
+		return nil, err
+	}
 	// Create the order
 	order := &entity.Order{
 		TID:       tID,
