@@ -24,5 +24,6 @@ func (p productRepository) GetallProductStock() ([]service.ProductStock, error) 
               FROM products p
               JOIN stocks s ON p.s_id = s.s_id`
 	err := p.DB.Select(&product, query)
+
 	return product, err
 }

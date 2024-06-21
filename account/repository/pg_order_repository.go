@@ -13,7 +13,7 @@ type orderRepository struct {
 
 func (r *orderRepository) GetByID(id uuid.UUID) (*entity.Order, error) {
 	var order entity.Order
-	err := r.DB.Get(&order, "SELECT * FROM orders WHERE o_id::text = $1", id)
+	err := r.DB.Get(&order, "SELECT o_id as OID, t_id as TID, t_price as TPrice, status as Status, create_at as CreatedAt, last_edit as LastEdit FROM orders WHERE o_id::text = $1", id)
 	if err != nil {
 		log.Printf("error on querying calprice %v", err.Error())
 		return nil, err

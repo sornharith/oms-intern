@@ -55,6 +55,7 @@ func NewHandler(c *Config) {
 	// for the order
 	g.POST("/order", h.CreateOrder)
 	g.PATCH("/order/status/:o_id", h.UpdateOrderStatus)
+	g.GET("/order/:o_id", h.GetorderById)
 
 	g.NoRoute(func(c *gin.Context) {
 		c.JSON(404, gin.H{"message": "Page not found"})
@@ -114,5 +115,25 @@ func (h *Handler) getproduct(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"products": product,
+	})
+}
+
+func (h *Handler) GetorderById(c *gin.Context) {
+	oid := c.Param("o_id")
+	id, err := uuid.Parse(oid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+	order, err := h.OrderService.GetOrderByID(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"errorid": "400",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"Order information": order,
 	})
 }

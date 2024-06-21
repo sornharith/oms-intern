@@ -25,7 +25,7 @@ func NewCalPriceRepository(db *sqlx.DB) *calPriceRepository {
 
 func (r *calPriceRepository) GetByID(id uuid.UUID) (*entity.CalPrice, error) {
 	var calPrice entity.CalPrice
-	err := r.DB.Get(&calPrice, "SELECT * FROM calprice WHERE t_id::text=$1", id)
+	err := r.DB.Get(&calPrice, "SELECT t_id as TID,t_price as TPrice, user_select as UserSelect, address as Address FROM calprice WHERE t_id::text=$1", id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("the calculate price not found with the provided ID")

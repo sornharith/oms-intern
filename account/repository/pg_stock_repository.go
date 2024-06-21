@@ -19,7 +19,7 @@ func NewStockRepository(db *sqlx.DB) entity.StockRepository {
 
 func (r *stockRepository) GetStockByProductID(productID int) (*entity.Stock, error) {
 	var stock entity.Stock
-	err := r.DB.Get(&stock, `SELECT s.* FROM stocks s 
+	err := r.DB.Get(&stock, `SELECT s.s_id as SID, s.quantity as Quantity FROM stocks s 
                              JOIN products p ON s.s_id = p.s_id 
                              WHERE p.p_id = $1`, productID)
 	if err != nil {

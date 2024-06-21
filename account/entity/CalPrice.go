@@ -3,10 +3,10 @@ package entity
 import "github.com/google/uuid"
 
 type CalPrice struct {
-	TID        uuid.UUID `db:"t_id"`
-	TPrice     float64   `db:"t_price"`
-	UserSelect string    `db:"user_select"`
-	Address    string    `db:"address"`
+	TID        uuid.UUID
+	TPrice     float64
+	UserSelect string
+	Address    string
 }
 
 type UserSelectItem struct {
