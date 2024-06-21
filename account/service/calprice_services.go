@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"memrizr/account/entity"
-	"memrizr/account/entity/apperrors"
 )
 
 type calPriceUsecase struct {
@@ -52,14 +51,14 @@ func (u *calPriceUsecase) CreateCalPrice(calPrice *entity.CalPrice) (*entity.Cal
 		return nil, err
 	}
 	// adding the address price to the total price
-	switch calPrice.Address {
-	case entity.AddressDomestic:
-		totalPrice += entity.PriceDomestic
-	case entity.AddressInternational:
-		totalPrice += entity.PriceInternational
-	default:
-		return nil, apperror.NewBadRequest("Incorrect address")
+	Address := new(entity.Address)
+	Address.Init(calPrice.Address)
+
+	addprice, err := Address.Price()
+	if err != nil {
+		return nil, err
 	}
+	totalPrice += addprice
 
 	// Update the CalPrice entity with the calculated total price
 	calPrice.TPrice = totalPrice
