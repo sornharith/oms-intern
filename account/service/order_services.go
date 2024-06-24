@@ -113,7 +113,8 @@ func (u *createOrderUsecase) UpdateOrderStatus(o_id uuid.UUID, status string) er
 	}
 	if order.Status == entity.OrderStatusNew && status == entity.OrderStatusPaid {
 		order.Status = status
-	} else if isValidStatus(service.OrderStatus(status)) {
+	} else if order.IsValidStatus(service.OrderStatus(status)) {
+		log.Printf("status %s", status)
 		order.Status = status
 	} else {
 		return errors.New("invalid order status")
@@ -124,12 +125,6 @@ func (u *createOrderUsecase) UpdateOrderStatus(o_id uuid.UUID, status string) er
 		return err
 	}
 	return nil
-}
-
-func isValidStatus(status service.OrderStatus) bool {
-	return status == entity.OrderStatusPaid ||
-		status == entity.OrderStatusProcessing ||
-		status == entity.OrderStatusDone
 }
 
 func (u *createOrderUsecase) DeleteOrder(id int) error {

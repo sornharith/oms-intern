@@ -2,6 +2,7 @@ package entity
 
 import (
 	"github.com/google/uuid"
+	service "memrizr/account/service/model"
 	"time"
 )
 
@@ -20,3 +21,12 @@ const (
 	OrderStatusProcessing = "Processing"
 	OrderStatusDone       = "Done"
 )
+
+func (o *Order) IsValidStatus(status service.OrderStatus) bool {
+	if o.Status == OrderStatusNew && status != OrderStatusPaid {
+		return false
+	}
+	return status == OrderStatusPaid ||
+		status == OrderStatusProcessing ||
+		status == OrderStatusDone
+}
