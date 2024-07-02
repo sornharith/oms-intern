@@ -79,7 +79,6 @@ func TestCreateOrderUsecase(t *testing.T) {
 	})
 }
 
-// Test for GetOrderByID method
 func TestCreateOrderUsecase_GetOrderByID(t *testing.T) {
 	t.Run("Successful GetOrderByID", func(t *testing.T) {
 		ctx := context.TODO()
@@ -125,7 +124,6 @@ func TestCreateOrderUsecase_GetOrderByID(t *testing.T) {
 	})
 }
 
-// Test for UpdateOrderStatus method
 func TestCreateOrderUsecase_UpdateOrderStatus(t *testing.T) {
 	t.Run("Successful UpdateOrderStatus", func(t *testing.T) {
 		ctx := context.TODO()
@@ -199,7 +197,6 @@ func TestCreateOrderUsecase_UpdateOrderStatus(t *testing.T) {
 	})
 }
 
-// Test for DeleteOrder method
 func TestCreateOrderUsecase_DeleteOrder(t *testing.T) {
 	t.Run("Successful DeleteOrder", func(t *testing.T) {
 		ctx := context.TODO()

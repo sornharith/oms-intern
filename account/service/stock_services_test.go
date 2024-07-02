@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestStockService(t *testing.T) {
+func TestStockService_Get(t *testing.T) {
 	ctx := context.TODO()
 
 	t.Run("Test GetStockByID Success", func(t *testing.T) {
@@ -40,7 +40,9 @@ func TestStockService(t *testing.T) {
 		assert.Equal(t, "not found", err.Error())
 		mockRepo.AssertExpectations(t)
 	})
-
+}
+func TestStockService_Update(t *testing.T) {
+	ctx := context.TODO()
 	t.Run("Test UpdateStockById Success", func(t *testing.T) {
 		mockRepo := new(repository.MockStockRepository)
 		stock := &entity.Stock{SID: 1, Quantity: 100}
