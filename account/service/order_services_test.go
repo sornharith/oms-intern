@@ -12,13 +12,6 @@ import (
 	"time"
 )
 
-type MockTime struct{}
-
-var fixedTime = time.Date(2024, time.July, 2, 15, 5, 39, 0, time.Local)
-
-func (m *MockTime) Now() time.Time {
-	return fixedTime
-}
 func TestCreateOrderUsecase(t *testing.T) {
 	t.Run("Successful CreateOrder", func(t *testing.T) {
 		ctx := context.TODO()
