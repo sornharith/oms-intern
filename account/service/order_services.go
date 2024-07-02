@@ -104,6 +104,5 @@ func (u *createOrderUsecase) UpdateOrderStatus(ctx context.Context, o_id uuid.UU
 }
 
 func (u *createOrderUsecase) DeleteOrder(ctx context.Context, id int) error {
-	//TODO implement me
-	panic("implement me")
+	return u.orderRepo.Delete(ctx, id)
 }
