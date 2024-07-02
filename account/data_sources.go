@@ -14,7 +14,8 @@ type dataSources struct {
 
 // InitDS establishes connections to fields in dataSources
 func initDS() (*dataSources, error) {
-	log.Printf("Initializing data sources\n")
+	//log := logger.Setup()
+	//log.Printf("Initializing data sources\n")
 
 	// load env variables
 	pgHost := os.Getenv("PG_HOST")
@@ -30,11 +31,13 @@ func initDS() (*dataSources, error) {
 	db, err := sqlx.Open("postgres", pgConnString)
 
 	if err != nil {
+		log.Fatal("error opening db:", err)
 		return nil, fmt.Errorf("error opening db: %w", err)
 	}
 
 	// Verify database connection is working
 	if err := db.Ping(); err != nil {
+		log.Fatal("error pinging db:", err)
 		return nil, fmt.Errorf("error connecting to db: %w", err)
 	}
 

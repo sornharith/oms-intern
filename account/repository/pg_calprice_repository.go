@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -23,7 +24,7 @@ func NewCalPriceRepository(db *sqlx.DB) *calPriceRepository {
 	}
 }
 
-func (r *calPriceRepository) GetByID(id uuid.UUID) (*entity.CalPrice, error) {
+func (r *calPriceRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.CalPrice, error) {
 	var calPrice entity.CalPrice
 	err := r.DB.Get(&calPrice, "SELECT t_id as TID,t_price as TPrice, user_select as UserSelect, address as Address FROM calprice WHERE t_id::text=$1", id)
 	if err != nil {
@@ -36,19 +37,19 @@ func (r *calPriceRepository) GetByID(id uuid.UUID) (*entity.CalPrice, error) {
 	return &calPrice, nil
 }
 
-func (r *calPriceRepository) Update(calPrice *entity.CalPrice) error {
+func (r *calPriceRepository) Update(ctx context.Context, calPrice *entity.CalPrice) error {
 	query := "UPDATE calprice SET t_price=$1, user_select=$2 WHERE t_id=$3"
 	_, err := r.DB.Exec(query, calPrice.TPrice, calPrice.UserSelect, calPrice.TID)
 
 	return err
 }
 
-func (r *calPriceRepository) Delete(id int) error {
+func (r *calPriceRepository) Delete(ctx context.Context, id int) error {
 	query := "DELETE FROM calprice WHERE t_id=$1"
 	_, err := r.DB.Exec(query, id)
 	return err
 }
-func (r *calPriceRepository) CalculateTotalPrice(userSelect []map[string]interface{}) (float64, error) {
+func (r *calPriceRepository) CalculateTotalPrice(ctx context.Context, userSelect []map[string]interface{}) (float64, error) {
 	var totalPrice float64
 	var price float64
 	for _, item := range userSelect {
@@ -65,7 +66,7 @@ func (r *calPriceRepository) CalculateTotalPrice(userSelect []map[string]interfa
 	return totalPrice, nil
 }
 
-func (r *calPriceRepository) CreateCalPrice(calPrice *entity.CalPrice) error {
+func (r *calPriceRepository) CreateCalPrice(ctx context.Context, calPrice *entity.CalPrice) error {
 	userSelectJSON, err := json.Marshal(calPrice.UserSelect)
 	if err != nil {
 		return err

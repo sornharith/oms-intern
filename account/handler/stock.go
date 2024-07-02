@@ -40,8 +40,8 @@ func (h *Handler) updateStock(c *gin.Context) {
 		SID:      id,
 		Quantity: input.Quantity,
 	}
-
-	if err := h.StockService.UpdateStockById(&stock); err != nil {
+	ctx := c.Request.Context()
+	if err := h.StockService.UpdateStockById(ctx, &stock); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

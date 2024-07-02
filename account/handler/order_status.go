@@ -22,7 +22,8 @@ func (h *Handler) UpdateOrderStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid orderid"})
 		return
 	}
-	if err := h.OrderService.UpdateOrderStatus(id, Input.Status); err != nil {
+	ctx := c.Request.Context()
+	if err := h.OrderService.UpdateOrderStatus(ctx, id, Input.Status); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	} else {
 		c.JSON(http.StatusOK, gin.H{

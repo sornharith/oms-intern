@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/jmoiron/sqlx"
@@ -18,7 +19,7 @@ func NewStockRepository(db *sqlx.DB) entity.StockRepository {
 	}
 }
 
-func (r *stockRepository) GetStockByProductID(productID int) (*entity.Stock, error) {
+func (r *stockRepository) GetStockByProductID(ctx context.Context, productID int) (*entity.Stock, error) {
 	var stock entity.Stock
 	err := r.DB.Get(&stock, `SELECT s.s_id as SID, s.quantity as Quantity FROM stocks s 
                              JOIN products p ON s.s_id = p.s_id 
@@ -29,7 +30,7 @@ func (r *stockRepository) GetStockByProductID(productID int) (*entity.Stock, err
 	return &stock, nil
 }
 
-func (r *stockRepository) DeductStock(productID int, amount int) error {
+func (r *stockRepository) DeductStock(ctx context.Context, productID int, amount int) error {
 	query := `UPDATE stocks
               SET quantity = quantity - $1
               WHERE s_id = (SELECT s_id FROM products WHERE p_id = $2)
@@ -52,7 +53,7 @@ func (r *stockRepository) DeductStock(productID int, amount int) error {
 	return nil
 }
 
-func (r *stockRepository) AddStock(productID int, amount int) error {
+func (r *stockRepository) AddStock(ctx context.Context, productID int, amount int) error {
 	query := `UPDATE stocks
               SET quantity = quantity + $1
               WHERE s_id = (SELECT s_id FROM products WHERE p_id = $2)`
@@ -61,7 +62,7 @@ func (r *stockRepository) AddStock(productID int, amount int) error {
 	return err
 }
 
-func (r *stockRepository) DeductStockBulk(deductions map[int]int) error {
+func (r *stockRepository) DeductStockBulk(ctx context.Context, deductions map[int]int) error {
 	if len(deductions) == 0 {
 		return nil
 	}
@@ -162,7 +163,7 @@ func (r *stockRepository) DeductStockBulk(deductions map[int]int) error {
 	return nil
 }
 
-func (r *stockRepository) UpdateStock(StockId int, amount int) error {
+func (r *stockRepository) UpdateStock(ctx context.Context, StockId int, amount int) error {
 	// Corrected SQL query with parameters in the right order
 	query := `UPDATE stocks SET quantity = $1 WHERE s_id = $2`
 

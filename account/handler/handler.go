@@ -3,6 +3,8 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/trace"
 	"memrizr/account/entity"
 	"net/http"
 	"strconv"
@@ -15,6 +17,8 @@ type Handler struct {
 	ProductService  entity.ProductService
 	OrderService    entity.OrderService
 	StockService    entity.StockService
+	Logger          *logrus.Logger
+	Tracer          trace.Tracer
 }
 
 // Config will hold services that will eventually be injected into this
@@ -26,6 +30,8 @@ type Config struct {
 	ProductService  entity.ProductService
 	OrderService    entity.OrderService
 	StockService    entity.StockService
+	Logger          *logrus.Logger
+	Tracer          trace.Tracer
 }
 
 // NewHandler initializes the handler with required injected services along with http routes
@@ -38,10 +44,13 @@ func NewHandler(c *Config) {
 		ProductService:  c.ProductService,
 		OrderService:    c.OrderService,
 		StockService:    c.StockService,
+		Logger:          c.Logger,
+		Tracer:          c.Tracer,
 	}
 
 	// Create an account group
 	g := c.R
+	//g.Use(logger.GinLogger(h.Logger), logger.GinRecovery(h.Logger), tracing.GinTracer())
 
 	g.GET("/me", h.Me)
 	// for the stock
@@ -70,7 +79,8 @@ func (h *Handler) GettransactionbyID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-	calp, err := h.CalpriceService.GetCalPriceByID(id)
+	ctx := c.Request.Context()
+	calp, err := h.CalpriceService.GetCalPriceByID(ctx, id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -92,7 +102,8 @@ func (h *Handler) GetStockbyid(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid productid"})
 		return
 	}
-	stock, err := h.StockService.GetStockByID(id)
+	ctx := c.Request.Context()
+	stock, err := h.StockService.GetStockByID(ctx, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -125,7 +136,8 @@ func (h *Handler) GetorderById(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-	order, err := h.OrderService.GetOrderByID(id)
+	ctx := c.Request.Context()
+	order, err := h.OrderService.GetOrderByID(ctx, id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   err.Error(),

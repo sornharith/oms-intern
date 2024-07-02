@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
@@ -33,9 +34,9 @@ func NewCreateOrderUsecase(c *CreateOrderconfig) entity.OrderService {
 	}
 }
 
-func (u *createOrderUsecase) CreateOrder(tID uuid.UUID) (*entity.Order, error) {
+func (u *createOrderUsecase) CreateOrder(ctx context.Context, tID uuid.UUID) (*entity.Order, error) {
 	// Fetch transaction details
-	calPrice, err := u.calPriceRepo.GetByID(tID)
+	calPrice, err := u.calPriceRepo.GetByID(ctx, tID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,31 +50,6 @@ func (u *createOrderUsecase) CreateOrder(tID uuid.UUID) (*entity.Order, error) {
 		return nil, errors.New("unable to parse user select: " + err.Error())
 	}
 
-	//// for rollback deduction
-	//type deduction struct {
-	//	ProductID int
-	//	Amount    int
-	//}
-	//var deductions []deduction
-	//
-	//for _, item := range userSelect {
-	//	productID := item.ProductID
-	//	amount := item.Amount
-	//
-	//	if err := u.stockRepo.DeductStock(productID, amount); err != nil {
-	//		// Rollback deductions
-	//		for _, d := range deductions {
-	//			if err := u.stockRepo.AddStock(d.ProductID, d.Amount); err != nil {
-	//				log.Printf("failed to rollback stock for product ID %d: %s", d.ProductID, err)
-	//			}
-	//		}
-	//		log.Println("insufficient stock for product ID: " + strconv.Itoa(productID))
-	//		return nil, errors.New("please check your stock")
-	//	}
-	//	// Record successful deduction
-	//	deductions = append(deductions, deduction{ProductID: productID, Amount: amount})
-	//}
-
 	// Prepare the deductions
 	deductions := make(map[int]int)
 	for _, item := range userSelect {
@@ -83,7 +59,7 @@ func (u *createOrderUsecase) CreateOrder(tID uuid.UUID) (*entity.Order, error) {
 	}
 
 	// Attempt to deduct stock in bulk
-	if err := u.stockRepo.DeductStockBulk(deductions); err != nil {
+	if err := u.stockRepo.DeductStockBulk(ctx, deductions); err != nil {
 		return nil, err
 	}
 	// Create the order
@@ -95,18 +71,18 @@ func (u *createOrderUsecase) CreateOrder(tID uuid.UUID) (*entity.Order, error) {
 		LastEdit:  time.Now(),
 	}
 
-	if err := u.orderRepo.CreateOrder(order); err != nil {
+	if err := u.orderRepo.CreateOrder(ctx, order); err != nil {
 		return nil, err
 	}
 
 	return order, nil
 }
-func (u *createOrderUsecase) GetOrderByID(id uuid.UUID) (*entity.Order, error) {
-	return u.orderRepo.GetByID(id)
+func (u *createOrderUsecase) GetOrderByID(ctx context.Context, id uuid.UUID) (*entity.Order, error) {
+	return u.orderRepo.GetByID(ctx, id)
 }
 
-func (u *createOrderUsecase) UpdateOrderStatus(o_id uuid.UUID, status string) error {
-	order, err := u.orderRepo.GetByID(o_id)
+func (u *createOrderUsecase) UpdateOrderStatus(ctx context.Context, o_id uuid.UUID, status string) error {
+	order, err := u.orderRepo.GetByID(ctx, o_id)
 	if err != nil {
 		log.Printf("error getting order by id %d", o_id)
 		return errors.New("invalid input")
@@ -120,14 +96,14 @@ func (u *createOrderUsecase) UpdateOrderStatus(o_id uuid.UUID, status string) er
 		return errors.New("invalid order status")
 	}
 
-	err = u.orderRepo.Update(order)
+	err = u.orderRepo.Update(ctx, order)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (u *createOrderUsecase) DeleteOrder(id int) error {
+func (u *createOrderUsecase) DeleteOrder(ctx context.Context, id int) error {
 	//TODO implement me
 	panic("implement me")
 }

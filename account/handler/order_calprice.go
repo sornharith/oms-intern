@@ -35,7 +35,8 @@ func (h *Handler) CreateCalPrice(c *gin.Context) {
 		UserSelect: string(userSelectJSON),
 		Address:    input.Address,
 	}
-	createdCalPrice, err := h.CalpriceService.CreateCalPrice(&calPrice)
+	ctx := c.Request.Context()
+	createdCalPrice, err := h.CalpriceService.CreateCalPrice(ctx, &calPrice)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

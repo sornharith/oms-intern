@@ -21,8 +21,8 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	order, err := h.OrderService.CreateOrder(input.TID)
+	ctx := c.Request.Context()
+	order, err := h.OrderService.CreateOrder(ctx, input.TID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

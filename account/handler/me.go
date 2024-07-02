@@ -2,6 +2,8 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+	"memrizr/account/logger"
 	"net/http"
 )
 
@@ -43,6 +45,12 @@ func (h *Handler) Me(c *gin.Context) {
 	//c.JSON(http.StatusOK, gin.H{
 	//	"user": u,
 	//})
+	_, span := h.Tracer.Start(c.Request.Context(), "ME")
+	defer span.End()
+
+	logger.LogInfo(h.Logger, "Get Me successfully", logrus.Fields{
+		"Hi": "success",
+	})
 	c.JSON(http.StatusOK, gin.H{
 		"message": "hello world is it save or not",
 	})

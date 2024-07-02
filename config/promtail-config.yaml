@@ -1,0 +1,40 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://gateway:3100/loki/api/v1/push
+#    external_host:
+#      job: promtiail
+#      host: example-host
+
+scrape_configs:
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: oms-project
+          __path__: /var/log/*.log
+
+#  - job_name: app-logs
+#    static_configs:
+#      - targets:
+#          - localhost
+#        labels:
+#          job: app
+#          __path__: /var/log/app/*.log
+
+#  - job_name: docker-logs
+#    docker_sd_configs:
+#      - host: unix:///var/run/docker.sock
+#    relabel_configs:
+#      - source_labels: [__meta_docker_container_name]
+#        target_label: job
+#      - source_labels: [__meta_docker_container_name]
+#        target_label: instance
+#      - source_labels: [__meta_docker_container_logfile]
+#        target_label: __path__

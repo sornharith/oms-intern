@@ -54,10 +54,10 @@ func main() {
 	defer cancel()
 
 	// shutdown data sources
+	log.Println("Shutting down database server...")
 	if err := ds.close(); err != nil {
 		log.Fatalf("A problem occurred gracefully shutting down data sources: %v\n", err)
 	}
-
 	// Shutdown server
 	log.Println("Shutting down server...")
 	if err := srv.Shutdown(ctx); err != nil {
