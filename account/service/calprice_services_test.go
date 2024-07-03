@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func TestCalPriceUsecase_Get(t *testing.T) {
+func TestCalPriceUsecase(t *testing.T) {
 	ctx := context.TODO()
 
 	t.Run("Test GetCalPriceByID Success", func(t *testing.T) {
@@ -44,9 +44,6 @@ func TestCalPriceUsecase_Get(t *testing.T) {
 		mockCalPriceRepo.AssertExpectations(t)
 	})
 
-}
-func TestCalPriceUsecase_Update(t *testing.T) {
-	ctx := context.TODO()
 	t.Run("Test UpdateCalPrice Success", func(t *testing.T) {
 		mockCalPriceRepo := new(repository.MockCalPriceRepository)
 		calPrice := &entity.CalPrice{TID: uuid.New()}
@@ -73,9 +70,7 @@ func TestCalPriceUsecase_Update(t *testing.T) {
 		assert.Equal(t, "update failed", err.Error())
 		mockCalPriceRepo.AssertExpectations(t)
 	})
-}
-func TestCalPriceUsecase_Delete(t *testing.T) {
-	ctx := context.TODO()
+
 	t.Run("Test DeleteCalPrice Success", func(t *testing.T) {
 		mockCalPriceRepo := new(repository.MockCalPriceRepository)
 
@@ -100,9 +95,7 @@ func TestCalPriceUsecase_Delete(t *testing.T) {
 		assert.Equal(t, "delete failed", err.Error())
 		mockCalPriceRepo.AssertExpectations(t)
 	})
-}
-func TestCalPriceUsecase_Create(t *testing.T) {
-	ctx := context.TODO()
+
 	t.Run("Test CreateCalPrice Success", func(t *testing.T) {
 		mockCalPriceRepo := new(repository.MockCalPriceRepository)
 		calPrice := &entity.CalPrice{

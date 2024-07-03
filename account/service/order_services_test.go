@@ -77,9 +77,7 @@ func TestCreateOrderUsecase(t *testing.T) {
 		assert.Nil(t, result)
 		mockCalPriceRepo.AssertExpectations(t)
 	})
-}
 
-func TestCreateOrderUsecase_GetOrderByID(t *testing.T) {
 	t.Run("Successful GetOrderByID", func(t *testing.T) {
 		ctx := context.TODO()
 		mockOrderRepo := new(repository.MockOrderRepository)
@@ -122,9 +120,7 @@ func TestCreateOrderUsecase_GetOrderByID(t *testing.T) {
 		assert.Nil(t, result)
 		mockOrderRepo.AssertExpectations(t)
 	})
-}
 
-func TestCreateOrderUsecase_UpdateOrderStatus(t *testing.T) {
 	t.Run("Successful UpdateOrderStatus", func(t *testing.T) {
 		ctx := context.TODO()
 		mockOrderRepo := new(repository.MockOrderRepository)
@@ -195,9 +191,7 @@ func TestCreateOrderUsecase_UpdateOrderStatus(t *testing.T) {
 		assert.Error(t, err)
 		mockOrderRepo.AssertExpectations(t)
 	})
-}
 
-func TestCreateOrderUsecase_DeleteOrder(t *testing.T) {
 	t.Run("Successful DeleteOrder", func(t *testing.T) {
 		ctx := context.TODO()
 		mockOrderRepo := new(repository.MockOrderRepository)
