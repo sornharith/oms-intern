@@ -87,6 +87,7 @@ func (u *createOrderUsecase) UpdateOrderStatus(ctx context.Context, o_id uuid.UU
 		log.Printf("error getting order by id %d", o_id)
 		return errors.New("invalid input")
 	}
+
 	if order.Status == entity.OrderStatusNew && status == entity.OrderStatusPaid {
 		order.Status = status
 	} else if order.IsValidStatus(service.OrderStatus(status)) {

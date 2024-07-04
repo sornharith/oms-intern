@@ -12,15 +12,24 @@ import (
 	"time"
 )
 
+func setupOrderTest() (*repository.MockOrderRepository, *repository.MockCalPriceRepository, *repository.MockStockRepository, entity.OrderService) {
+	orderRepo := new(repository.MockOrderRepository)
+	calPriceRepo := new(repository.MockCalPriceRepository)
+	stockRepo := new(repository.MockStockRepository)
+	orderservice := NewCreateOrderUsecase(&CreateOrderconfig{
+		CalPriceRepo: calPriceRepo,
+		OrderRepo:    orderRepo,
+		StockRepo:    stockRepo,
+	})
+	return orderRepo, calPriceRepo, stockRepo, orderservice
+}
+
 func TestCreateOrderUsecase(t *testing.T) {
+	ctx := context.TODO()
 	t.Run("Successful CreateOrder", func(t *testing.T) {
-		ctx := context.TODO()
 		mockTime := time.Date(2024, time.July, 2, 15, 38, 27, 0, time.UTC)
 
-		mockOrderRepo := new(repository.MockOrderRepository)
-		mockCalPriceRepo := new(repository.MockCalPriceRepository)
-		mockStockRepo := new(repository.MockStockRepository)
-
+		mockOrderRepo, mockCalPriceRepo, mockStockRepo, service := setupOrderTest()
 		tID := uuid.New()
 		calPrice := &entity.CalPrice{
 			TID:        tID,
@@ -40,12 +49,6 @@ func TestCreateOrderUsecase(t *testing.T) {
 		mockStockRepo.On("DeductStockBulk", ctx, deductions).Return(nil)
 		mockOrderRepo.On("CreateOrder", ctx, mock.AnythingOfType("*entity.Order")).Return(nil)
 
-		service := NewCreateOrderUsecase(&CreateOrderconfig{
-			CalPriceRepo: mockCalPriceRepo,
-			OrderRepo:    mockOrderRepo,
-			StockRepo:    mockStockRepo,
-		})
-
 		result, err := service.CreateOrder(ctx, tID)
 
 		assert.NoError(t, err)
@@ -57,19 +60,10 @@ func TestCreateOrderUsecase(t *testing.T) {
 	})
 
 	t.Run("Failed to Get CalPrice", func(t *testing.T) {
-		ctx := context.TODO()
-		mockOrderRepo := new(repository.MockOrderRepository)
-		mockCalPriceRepo := new(repository.MockCalPriceRepository)
-		mockStockRepo := new(repository.MockStockRepository)
+		_, mockCalPriceRepo, _, service := setupOrderTest()
 
 		tID := uuid.New()
 		mockCalPriceRepo.On("GetByID", ctx, tID).Return(nil, errors.New("calPrice not found"))
-
-		service := NewCreateOrderUsecase(&CreateOrderconfig{
-			CalPriceRepo: mockCalPriceRepo,
-			OrderRepo:    mockOrderRepo,
-			StockRepo:    mockStockRepo,
-		})
 
 		result, err := service.CreateOrder(ctx, tID)
 
@@ -79,8 +73,7 @@ func TestCreateOrderUsecase(t *testing.T) {
 	})
 
 	t.Run("Successful GetOrderByID", func(t *testing.T) {
-		ctx := context.TODO()
-		mockOrderRepo := new(repository.MockOrderRepository)
+		mockOrderRepo, _, _, service := setupOrderTest()
 
 		tID := uuid.New()
 		order := &entity.Order{
@@ -91,10 +84,6 @@ func TestCreateOrderUsecase(t *testing.T) {
 
 		mockOrderRepo.On("GetByID", ctx, tID).Return(order, nil)
 
-		service := NewCreateOrderUsecase(&CreateOrderconfig{
-			OrderRepo: mockOrderRepo,
-		})
-
 		result, err := service.GetOrderByID(ctx, tID)
 
 		assert.NoError(t, err)
@@ -104,15 +93,10 @@ func TestCreateOrderUsecase(t *testing.T) {
 	})
 
 	t.Run("Failed to Get Order", func(t *testing.T) {
-		ctx := context.TODO()
-		mockOrderRepo := new(repository.MockOrderRepository)
+		mockOrderRepo, _, _, service := setupOrderTest()
 
 		tID := uuid.New()
 		mockOrderRepo.On("GetByID", ctx, tID).Return(nil, errors.New("order not found"))
-
-		service := NewCreateOrderUsecase(&CreateOrderconfig{
-			OrderRepo: mockOrderRepo,
-		})
 
 		result, err := service.GetOrderByID(ctx, tID)
 
@@ -122,8 +106,7 @@ func TestCreateOrderUsecase(t *testing.T) {
 	})
 
 	t.Run("Successful UpdateOrderStatus", func(t *testing.T) {
-		ctx := context.TODO()
-		mockOrderRepo := new(repository.MockOrderRepository)
+		mockOrderRepo, _, _, service := setupOrderTest()
 
 		oID := uuid.New()
 		order := &entity.Order{
@@ -135,10 +118,6 @@ func TestCreateOrderUsecase(t *testing.T) {
 		mockOrderRepo.On("GetByID", ctx, oID).Return(order, nil)
 		mockOrderRepo.On("Update", ctx, mock.AnythingOfType("*entity.Order")).Return(nil)
 
-		service := NewCreateOrderUsecase(&CreateOrderconfig{
-			OrderRepo: mockOrderRepo,
-		})
-
 		err := service.UpdateOrderStatus(ctx, oID, entity.OrderStatusPaid)
 
 		assert.NoError(t, err)
@@ -146,9 +125,7 @@ func TestCreateOrderUsecase(t *testing.T) {
 	})
 
 	t.Run("Failed to Update Order Status", func(t *testing.T) {
-		ctx := context.TODO()
-		mockOrderRepo := new(repository.MockOrderRepository)
-
+		mockOrderRepo, _, _, service := setupOrderTest()
 		oID := uuid.New()
 		order := &entity.Order{
 			TID:    oID,
@@ -159,10 +136,6 @@ func TestCreateOrderUsecase(t *testing.T) {
 		mockOrderRepo.On("GetByID", ctx, oID).Return(order, nil)
 		mockOrderRepo.On("Update", ctx, mock.AnythingOfType("*entity.Order")).Return(errors.New("update failed"))
 
-		service := NewCreateOrderUsecase(&CreateOrderconfig{
-			OrderRepo: mockOrderRepo,
-		})
-
 		err := service.UpdateOrderStatus(ctx, oID, entity.OrderStatusPaid)
 
 		assert.Error(t, err)
@@ -170,8 +143,7 @@ func TestCreateOrderUsecase(t *testing.T) {
 	})
 
 	t.Run("Invalid Status Update", func(t *testing.T) {
-		ctx := context.TODO()
-		mockOrderRepo := new(repository.MockOrderRepository)
+		mockOrderRepo, _, _, service := setupOrderTest()
 
 		oID := uuid.New()
 		order := &entity.Order{
@@ -182,10 +154,6 @@ func TestCreateOrderUsecase(t *testing.T) {
 
 		mockOrderRepo.On("GetByID", ctx, oID).Return(order, nil)
 
-		service := NewCreateOrderUsecase(&CreateOrderconfig{
-			OrderRepo: mockOrderRepo,
-		})
-
 		err := service.UpdateOrderStatus(ctx, oID, "InvalidStatus")
 
 		assert.Error(t, err)
@@ -193,15 +161,10 @@ func TestCreateOrderUsecase(t *testing.T) {
 	})
 
 	t.Run("Successful DeleteOrder", func(t *testing.T) {
-		ctx := context.TODO()
-		mockOrderRepo := new(repository.MockOrderRepository)
+		mockOrderRepo, _, _, service := setupOrderTest()
 
 		orderID := 1
 		mockOrderRepo.On("Delete", ctx, orderID).Return(nil)
-
-		service := NewCreateOrderUsecase(&CreateOrderconfig{
-			OrderRepo: mockOrderRepo,
-		})
 
 		err := service.DeleteOrder(ctx, orderID)
 
@@ -210,15 +173,10 @@ func TestCreateOrderUsecase(t *testing.T) {
 	})
 
 	t.Run("Failed to Delete Order", func(t *testing.T) {
-		ctx := context.TODO()
-		mockOrderRepo := new(repository.MockOrderRepository)
+		mockOrderRepo, _, _, service := setupOrderTest()
 
 		orderID := 1
 		mockOrderRepo.On("Delete", ctx, orderID).Return(errors.New("delete failed"))
-
-		service := NewCreateOrderUsecase(&CreateOrderconfig{
-			OrderRepo: mockOrderRepo,
-		})
 
 		err := service.DeleteOrder(ctx, orderID)
 
