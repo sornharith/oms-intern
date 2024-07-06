@@ -1,24 +1,24 @@
 package service
 
 import (
-	"memrizr/account/entity"
+	"memrizr/account/repository"
 	service "memrizr/account/service/model"
 )
 
-type ProductService struct {
-	ProductRepository entity.ProductRepository
+type productService struct {
+	ProductRepository repository.ProductRepository
 }
 
 type ProductConfig struct {
-	ProductRepository entity.ProductRepository
+	ProductRepository repository.ProductRepository
 }
 
-func NewProductService(c *ProductConfig) entity.ProductService {
-	return &ProductService{
+func NewProductService(c *ProductConfig) ProductService {
+	return &productService{
 		ProductRepository: c.ProductRepository,
 	}
 }
 
-func (p ProductService) GetallProductwithstock() ([]service.ProductStock, error) {
+func (p productService) GetallProductwithstock() ([]service.ProductStock, error) {
 	return p.ProductRepository.GetallProductStock()
 }

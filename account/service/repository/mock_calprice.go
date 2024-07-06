@@ -13,18 +13,18 @@ type MockCalPriceRepository struct {
 
 func (m *MockCalPriceRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.CalPrice, error) {
 	args := m.Called(ctx, id)
-	calPrice, _ := args.Get(0).(*entity.CalPrice)
-	return calPrice, args.Error(1)
+	return args.Get(0).(*entity.CalPrice), args.Error(1)
 }
 
-func (m *MockCalPriceRepository) Update(ctx context.Context, calPrice *entity.CalPrice) error {
+func (m *MockCalPriceRepository) Update(ctx context.Context, calPrice *entity.CalPrice) (*entity.CalPrice, error) {
 	args := m.Called(ctx, calPrice)
-	return args.Error(0)
+	return calPrice, args.Error(0)
 }
 
-func (m *MockCalPriceRepository) Delete(ctx context.Context, id int) error {
+func (m *MockCalPriceRepository) Delete(ctx context.Context, id uuid.UUID) (*entity.CalPrice, error) {
 	args := m.Called(ctx, id)
-	return args.Error(0)
+	calPrice, _ := args.Get(0).(*entity.CalPrice)
+	return calPrice, args.Error(0)
 }
 
 func (m *MockCalPriceRepository) CalculateTotalPrice(ctx context.Context, userSelect []map[string]interface{}) (float64, error) {
@@ -32,7 +32,7 @@ func (m *MockCalPriceRepository) CalculateTotalPrice(ctx context.Context, userSe
 	return args.Get(0).(float64), args.Error(1)
 }
 
-func (m *MockCalPriceRepository) CreateCalPrice(ctx context.Context, calPrice *entity.CalPrice) error {
+func (m *MockCalPriceRepository) CreateCalPrice(ctx context.Context, calPrice *entity.CalPrice) (*entity.CalPrice, error) {
 	args := m.Called(ctx, calPrice)
-	return args.Error(0)
+	return calPrice, args.Error(0)
 }

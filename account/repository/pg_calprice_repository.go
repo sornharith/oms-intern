@@ -18,7 +18,7 @@ type calPriceRepository struct {
 	DB *sqlx.DB
 }
 
-func NewCalPriceRepository(db *sqlx.DB) *calPriceRepository {
+func NewCalPriceRepository(db *sqlx.DB) CalPriceRepository {
 	return &calPriceRepository{
 		DB: db,
 	}
@@ -37,17 +37,18 @@ func (r *calPriceRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity
 	return &calPrice, nil
 }
 
-func (r *calPriceRepository) Update(ctx context.Context, calPrice *entity.CalPrice) error {
+func (r *calPriceRepository) Update(ctx context.Context, calPrice *entity.CalPrice) (*entity.CalPrice, error) {
 	query := "UPDATE calprice SET t_price=$1, user_select=$2 WHERE t_id=$3"
 	_, err := r.DB.Exec(query, calPrice.TPrice, calPrice.UserSelect, calPrice.TID)
 
-	return err
+	return calPrice, err
 }
 
-func (r *calPriceRepository) Delete(ctx context.Context, id int) error {
-	query := "DELETE FROM calprice WHERE t_id=$1"
+func (r *calPriceRepository) Delete(ctx context.Context, id uuid.UUID) (*entity.CalPrice, error) {
+	res, _ := r.GetByID(ctx, id)
+	query := "DELETE FROM calprice WHERE t_id::text=$1"
 	_, err := r.DB.Exec(query, id)
-	return err
+	return res, err
 }
 func (r *calPriceRepository) CalculateTotalPrice(ctx context.Context, userSelect []map[string]interface{}) (float64, error) {
 	var totalPrice float64
@@ -66,22 +67,22 @@ func (r *calPriceRepository) CalculateTotalPrice(ctx context.Context, userSelect
 	return totalPrice, nil
 }
 
-func (r *calPriceRepository) CreateCalPrice(ctx context.Context, calPrice *entity.CalPrice) error {
+func (r *calPriceRepository) CreateCalPrice(ctx context.Context, calPrice *entity.CalPrice) (*entity.CalPrice, error) {
 	userSelectJSON, err := json.Marshal(calPrice.UserSelect)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	query := "INSERT INTO calprice (t_price, user_select,address) VALUES ($1, $2, $3) RETURNING t_id"
 	if err := r.DB.QueryRow(query, calPrice.TPrice, userSelectJSON, calPrice.Address).Scan(&calPrice.TID); err != nil {
 		// check unique constraint
 		if err, ok := err.(*pq.Error); ok && err.Code.Name() == "unique_violation" {
 			log.Printf("Could not create a user with id: %v. Reason: %v\n", calPrice.TID, err.Code.Name())
-			return apperror.NewConflict("transaction is", "duplicate")
+			return nil, apperror.NewConflict("transaction is", "duplicate")
 		}
 
 		log.Printf("Could not create a user with id: %v. Reason: %v\n", calPrice.TID, err)
-		return apperror.NewInternal()
+		return nil, apperror.NewInternal()
 	}
-	return nil
+	return calPrice, nil
 
 }

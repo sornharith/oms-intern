@@ -13,7 +13,7 @@ type stockRepository struct {
 	DB *sqlx.DB
 }
 
-func NewStockRepository(db *sqlx.DB) entity.StockRepository {
+func NewStockRepository(db *sqlx.DB) StockRepository {
 	return &stockRepository{
 		DB: db,
 	}
@@ -53,14 +53,14 @@ func (r *stockRepository) DeductStock(ctx context.Context, productID int, amount
 	return nil
 }
 
-func (r *stockRepository) AddStock(ctx context.Context, productID int, amount int) error {
-	query := `UPDATE stocks
-              SET quantity = quantity + $1
-              WHERE s_id = (SELECT s_id FROM products WHERE p_id = $2)`
-
-	_, err := r.DB.Exec(query, amount, productID)
-	return err
-}
+//func (r *stockRepository) AddStock(ctx context.Context, productID int, amount int) error {
+//	query := `UPDATE stocks
+//              SET quantity = quantity + $1
+//              WHERE s_id = (SELECT s_id FROM products WHERE p_id = $2)`
+//
+//	_, err := r.DB.Exec(query, amount, productID)
+//	return err
+//}
 
 func (r *stockRepository) DeductStockBulk(ctx context.Context, deductions map[int]int) error {
 	if len(deductions) == 0 {
@@ -163,25 +163,25 @@ func (r *stockRepository) DeductStockBulk(ctx context.Context, deductions map[in
 	return nil
 }
 
-func (r *stockRepository) UpdateStock(ctx context.Context, StockId int, amount int) error {
+func (r *stockRepository) UpdateStock(ctx context.Context, stock *entity.Stock) (*entity.Stock, error) {
 	// Corrected SQL query with parameters in the right order
 	query := `UPDATE stocks SET quantity = $1 WHERE s_id = $2`
 
 	// Execute the query with the correct parameter order
-	result, err := r.DB.Exec(query, amount, StockId)
+	result, err := r.DB.Exec(query, stock.Quantity, stock.SID)
 	if err != nil {
-		return fmt.Errorf("error updating stock: %w", err)
+		return nil, fmt.Errorf("error updating stock: %w", err)
 	}
 
 	// Check if any rows were affected by the update
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("error checking rows affected: %w", err)
+		return nil, fmt.Errorf("error checking rows affected: %w", err)
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("no stock found with the given ID or no update needed")
+		return nil, errors.New("no stock found with the given ID or no update needed")
 	}
 
-	return nil
+	return stock, nil
 }

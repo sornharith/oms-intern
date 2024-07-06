@@ -2,7 +2,6 @@ package repository
 
 import (
 	"github.com/jmoiron/sqlx"
-	"memrizr/account/entity"
 	service "memrizr/account/service/model"
 )
 
@@ -10,7 +9,7 @@ type productRepository struct {
 	DB *sqlx.DB
 }
 
-func NewProductRepository(db *sqlx.DB) entity.ProductRepository {
+func NewProductRepository(db *sqlx.DB) ProductRepository {
 	return &productRepository{
 		DB: db,
 	}

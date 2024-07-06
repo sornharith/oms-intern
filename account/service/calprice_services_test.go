@@ -10,15 +10,15 @@ import (
 	"testing"
 )
 
-func setupCalpriceTest() (*repository.MockCalPriceRepository, entity.CalPriceService) {
+func setupCalpriceTest() (*repository.MockCalPriceRepository, CalPriceService) {
 	calPriceRepo := new(repository.MockCalPriceRepository)
-	calpriceservice := NewCalPriceUsecase(&CalpConfig{CalPriceRepo: calPriceRepo})
-	return calPriceRepo, calpriceservice
+
+	calPriceService := NewCalPriceUsecase(&CalpConfig{CalPriceRepo: calPriceRepo})
+	return calPriceRepo, calPriceService
 }
 
-func TestCalPriceUsecase(t *testing.T) {
+func TestCreateCalPrice(t *testing.T) {
 	ctx := context.TODO()
-
 	t.Run("Test GetCalPriceByID Success", func(t *testing.T) {
 		mockCalPriceRepo, service := setupCalpriceTest()
 
@@ -37,6 +37,7 @@ func TestCalPriceUsecase(t *testing.T) {
 
 	t.Run("Test GetCalPriceByID Error", func(t *testing.T) {
 		mockCalPriceRepo, service := setupCalpriceTest()
+
 		id := uuid.New()
 
 		mockCalPriceRepo.On("GetByID", ctx, id).Return((*entity.CalPrice)(nil), errors.New("not found"))
@@ -48,55 +49,57 @@ func TestCalPriceUsecase(t *testing.T) {
 		assert.Equal(t, "not found", err.Error())
 		mockCalPriceRepo.AssertExpectations(t)
 	})
-
 	t.Run("Test UpdateCalPrice Success", func(t *testing.T) {
 		mockCalPriceRepo, service := setupCalpriceTest()
+
 		calPrice := &entity.CalPrice{TID: uuid.New()}
 
 		mockCalPriceRepo.On("Update", ctx, calPrice).Return(nil)
 
-		err := service.UpdateCalPrice(ctx, calPrice)
-
+		res, err := service.UpdateCalPrice(ctx, calPrice)
 		assert.NoError(t, err)
+		assert.Equal(t, calPrice, res)
 		mockCalPriceRepo.AssertExpectations(t)
 	})
 
 	t.Run("Test UpdateCalPrice Error", func(t *testing.T) {
 		mockCalPriceRepo, service := setupCalpriceTest()
+
 		calPrice := &entity.CalPrice{TID: uuid.New()}
 
 		mockCalPriceRepo.On("Update", ctx, calPrice).Return(errors.New("update failed"))
 
-		err := service.UpdateCalPrice(ctx, calPrice)
+		_, err := service.UpdateCalPrice(ctx, calPrice)
 
 		assert.Error(t, err)
 		assert.Equal(t, "update failed", err.Error())
 		mockCalPriceRepo.AssertExpectations(t)
 	})
-
 	t.Run("Test DeleteCalPrice Success", func(t *testing.T) {
 		mockCalPriceRepo, service := setupCalpriceTest()
 
-		mockCalPriceRepo.On("Delete", ctx, 1).Return(nil)
+		id := uuid.New()
 
-		err := service.DeleteCalPrice(ctx, 1)
+		mockCalPriceRepo.On("Delete", ctx, id).Return(nil)
+
+		_, err := service.DeleteCalPrice(ctx, id)
 
 		assert.NoError(t, err)
 		mockCalPriceRepo.AssertExpectations(t)
 	})
-
 	t.Run("Test DeleteCalPrice Error", func(t *testing.T) {
 		mockCalPriceRepo, service := setupCalpriceTest()
 
-		mockCalPriceRepo.On("Delete", ctx, 1).Return(errors.New("delete failed"))
+		id := uuid.New()
 
-		err := service.DeleteCalPrice(ctx, 1)
+		mockCalPriceRepo.On("Delete", ctx, id).Return(errors.New("delete failed"))
+
+		_, err := service.DeleteCalPrice(ctx, id)
 
 		assert.Error(t, err)
 		assert.Equal(t, "delete failed", err.Error())
 		mockCalPriceRepo.AssertExpectations(t)
 	})
-
 	t.Run("Test CreateCalPrice Success", func(t *testing.T) {
 		mockCalPriceRepo, service := setupCalpriceTest()
 
@@ -122,6 +125,7 @@ func TestCalPriceUsecase(t *testing.T) {
 	})
 	t.Run("Test CreateCalPrice JSON Error", func(t *testing.T) {
 		mockCalPriceRepo, service := setupCalpriceTest()
+
 		calPrice := &entity.CalPrice{
 			TID:        uuid.New(),
 			UserSelect: `invalid json`,
@@ -135,6 +139,7 @@ func TestCalPriceUsecase(t *testing.T) {
 	})
 	t.Run("Test CreateCalPrice Calculation Error", func(t *testing.T) {
 		mockCalPriceRepo, service := setupCalpriceTest()
+
 		calPrice := &entity.CalPrice{
 			TID:        uuid.New(),
 			UserSelect: `[{"product_id": 1, "amount": 2}]`,

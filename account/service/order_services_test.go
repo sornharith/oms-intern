@@ -6,182 +6,164 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"memrizr/account/entity"
 	"memrizr/account/service/repository"
 	"testing"
 	"time"
 )
 
-func setupOrderTest() (*repository.MockOrderRepository, *repository.MockCalPriceRepository, *repository.MockStockRepository, entity.OrderService) {
+func setupOrderTest() (*repository.MockOrderRepository, *repository.MockCalPriceRepository, *repository.MockStockRepository, OrderService) {
 	orderRepo := new(repository.MockOrderRepository)
 	calPriceRepo := new(repository.MockCalPriceRepository)
 	stockRepo := new(repository.MockStockRepository)
-	orderservice := NewCreateOrderUsecase(&CreateOrderconfig{
+
+	orderService := NewCreateOrderUsecase(&CreateOrderconfig{
 		CalPriceRepo: calPriceRepo,
 		OrderRepo:    orderRepo,
 		StockRepo:    stockRepo,
 	})
-	return orderRepo, calPriceRepo, stockRepo, orderservice
+
+	return orderRepo, calPriceRepo, stockRepo, orderService
 }
 
-func TestCreateOrderUsecase(t *testing.T) {
+func TestCreateOrder(t *testing.T) {
 	ctx := context.TODO()
-	t.Run("Successful CreateOrder", func(t *testing.T) {
-		mockTime := time.Date(2024, time.July, 2, 15, 38, 27, 0, time.UTC)
+	t.Run("success", func(t *testing.T) {
 
-		mockOrderRepo, mockCalPriceRepo, mockStockRepo, service := setupOrderTest()
+		mockOrderRepo, mockCalPriceRepo, mockStockRepo, usecase := setupOrderTest()
 		tID := uuid.New()
-		calPrice := &entity.CalPrice{
-			TID:        tID,
-			TPrice:     100.0,
-			UserSelect: `[{"product_id": 1, "amount": 2}]`,
-		}
-		_ = &entity.Order{
-			TID:       tID,
-			TPrice:    100.0,
-			Status:    entity.OrderStatusNew,
-			CreatedAt: mockTime,
-			LastEdit:  mockTime,
-		}
-		deductions := map[int]int{1: 2}
+		calPrice := &entity.CalPrice{TPrice: 100, UserSelect: `[{"ProductID": 1, "Amount": 2}]`}
+		order := &entity.Order{OID: uuid.New(), TID: tID, TPrice: 100, Status: "new", CreatedAt: time.Now(), LastEdit: time.Now()}
 
+		// Mock expectations
 		mockCalPriceRepo.On("GetByID", ctx, tID).Return(calPrice, nil)
-		mockStockRepo.On("DeductStockBulk", ctx, deductions).Return(nil)
-		mockOrderRepo.On("CreateOrder", ctx, mock.AnythingOfType("*entity.Order")).Return(nil)
+		mockStockRepo.On("DeductStockBulk", ctx, mock.Anything).Return(nil)
+		mockOrderRepo.On("CreateOrder", ctx, mock.Anything).Return(order, nil)
 
-		result, err := service.CreateOrder(ctx, tID)
+		// Execution
+		result, err := usecase.CreateOrder(ctx, tID)
 
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, 100.0, result.TPrice)
+		// Assertions
+		require.NoError(t, err)
+		assert.Equal(t, order, result)
+
+		// Verify
 		mockCalPriceRepo.AssertExpectations(t)
 		mockStockRepo.AssertExpectations(t)
 		mockOrderRepo.AssertExpectations(t)
 	})
 
-	t.Run("Failed to Get CalPrice", func(t *testing.T) {
-		_, mockCalPriceRepo, _, service := setupOrderTest()
+	t.Run("failure - cal price repo error", func(t *testing.T) {
+		// Setup
+		_, mockCalPriceRepo, _, usecase := setupOrderTest()
 
 		tID := uuid.New()
-		mockCalPriceRepo.On("GetByID", ctx, tID).Return(nil, errors.New("calPrice not found"))
 
-		result, err := service.CreateOrder(ctx, tID)
+		// Mock expectations
+		mockCalPriceRepo.On("GetByID", ctx, tID).Return((*entity.CalPrice)(nil), errors.New("cal price error"))
 
-		assert.Error(t, err)
+		// Execution
+		result, err := usecase.CreateOrder(ctx, tID)
+
+		// Assertions
+		require.Error(t, err)
 		assert.Nil(t, result)
+
+		// Verify
 		mockCalPriceRepo.AssertExpectations(t)
 	})
 
-	t.Run("Successful GetOrderByID", func(t *testing.T) {
-		mockOrderRepo, _, _, service := setupOrderTest()
+	t.Run("TestGetOrderByID success", func(t *testing.T) {
+		mockOrderRepo, _, _, usecase := setupOrderTest()
 
-		tID := uuid.New()
-		order := &entity.Order{
-			TID:    tID,
-			TPrice: 100.0,
-			Status: entity.OrderStatusNew,
-		}
+		id := uuid.New()
+		order := &entity.Order{OID: id}
 
-		mockOrderRepo.On("GetByID", ctx, tID).Return(order, nil)
+		mockOrderRepo.On("GetByID", ctx, id).Return(order, nil)
 
-		result, err := service.GetOrderByID(ctx, tID)
+		result, err := usecase.GetOrderByID(ctx, id)
 
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, 100.0, result.TPrice)
+		require.NoError(t, err)
+		assert.Equal(t, order, result)
+
 		mockOrderRepo.AssertExpectations(t)
 	})
 
-	t.Run("Failed to Get Order", func(t *testing.T) {
-		mockOrderRepo, _, _, service := setupOrderTest()
+	t.Run("TestGetOrderByID failure - repository error", func(t *testing.T) {
+		mockOrderRepo, _, _, usecase := setupOrderTest()
+		id := uuid.New()
 
-		tID := uuid.New()
-		mockOrderRepo.On("GetByID", ctx, tID).Return(nil, errors.New("order not found"))
+		mockOrderRepo.On("GetByID", ctx, id).Return((*entity.Order)(nil), errors.New("repository error"))
 
-		result, err := service.GetOrderByID(ctx, tID)
+		result, err := usecase.GetOrderByID(ctx, id)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, result)
+
 		mockOrderRepo.AssertExpectations(t)
 	})
 
-	t.Run("Successful UpdateOrderStatus", func(t *testing.T) {
-		mockOrderRepo, _, _, service := setupOrderTest()
+	t.Run("TestUpdateOrderStatus success", func(t *testing.T) {
+		mockOrderRepo, _, _, usecase := setupOrderTest()
 
-		oID := uuid.New()
-		order := &entity.Order{
-			TID:    oID,
-			TPrice: 100.0,
-			Status: entity.OrderStatusNew,
-		}
+		id := uuid.New()
+		order := &entity.Order{OID: id, Status: entity.OrderStatusNew}
 
-		mockOrderRepo.On("GetByID", ctx, oID).Return(order, nil)
-		mockOrderRepo.On("Update", ctx, mock.AnythingOfType("*entity.Order")).Return(nil)
+		mockOrderRepo.On("GetByID", ctx, id).Return(order, nil)
+		mockOrderRepo.On("Update", ctx, order).Return(order, nil)
 
-		err := service.UpdateOrderStatus(ctx, oID, entity.OrderStatusPaid)
+		result, err := usecase.UpdateOrderStatus(ctx, id, entity.OrderStatusPaid)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
+		assert.Equal(t, entity.OrderStatusPaid, result.Status)
+
 		mockOrderRepo.AssertExpectations(t)
 	})
 
-	t.Run("Failed to Update Order Status", func(t *testing.T) {
-		mockOrderRepo, _, _, service := setupOrderTest()
-		oID := uuid.New()
-		order := &entity.Order{
-			TID:    oID,
-			TPrice: 100.0,
-			Status: entity.OrderStatusNew,
-		}
+	t.Run("TestUpdateOrderStatus failure - invalid status", func(t *testing.T) {
+		mockOrderRepo, _, _, usecase := setupOrderTest()
 
-		mockOrderRepo.On("GetByID", ctx, oID).Return(order, nil)
-		mockOrderRepo.On("Update", ctx, mock.AnythingOfType("*entity.Order")).Return(errors.New("update failed"))
+		id := uuid.New()
+		order := &entity.Order{OID: id, Status: entity.OrderStatusNew}
 
-		err := service.UpdateOrderStatus(ctx, oID, entity.OrderStatusPaid)
+		mockOrderRepo.On("GetByID", ctx, id).Return(order, nil)
 
-		assert.Error(t, err)
+		result, err := usecase.UpdateOrderStatus(ctx, id, "invalid_status")
+
+		require.Error(t, err)
+		assert.Nil(t, result)
+
 		mockOrderRepo.AssertExpectations(t)
 	})
 
-	t.Run("Invalid Status Update", func(t *testing.T) {
-		mockOrderRepo, _, _, service := setupOrderTest()
+	t.Run("TestDeleteOrder success", func(t *testing.T) {
+		mockOrderRepo, _, _, usecase := setupOrderTest()
 
-		oID := uuid.New()
-		order := &entity.Order{
-			TID:    oID,
-			TPrice: 100.0,
-			Status: entity.OrderStatusNew,
-		}
+		id := uuid.New()
+		order := &entity.Order{OID: id}
 
-		mockOrderRepo.On("GetByID", ctx, oID).Return(order, nil)
+		mockOrderRepo.On("Delete", ctx, id).Return(order, nil)
 
-		err := service.UpdateOrderStatus(ctx, oID, "InvalidStatus")
+		result, err := usecase.DeleteOrder(ctx, id)
 
-		assert.Error(t, err)
+		require.NoError(t, err)
+		assert.Equal(t, order, result)
+
 		mockOrderRepo.AssertExpectations(t)
 	})
 
-	t.Run("Successful DeleteOrder", func(t *testing.T) {
-		mockOrderRepo, _, _, service := setupOrderTest()
+	t.Run("TestDeleteOrder failure - repository error", func(t *testing.T) {
+		mockOrderRepo, _, _, usecase := setupOrderTest()
 
-		orderID := 1
-		mockOrderRepo.On("Delete", ctx, orderID).Return(nil)
+		id := uuid.New()
+		mockOrderRepo.On("Delete", ctx, id).Return((*entity.Order)(nil), errors.New("repository error"))
 
-		err := service.DeleteOrder(ctx, orderID)
+		result, err := usecase.DeleteOrder(ctx, id)
 
-		assert.NoError(t, err)
+		require.Error(t, err)
+		assert.Nil(t, result)
+
 		mockOrderRepo.AssertExpectations(t)
 	})
-
-	t.Run("Failed to Delete Order", func(t *testing.T) {
-		mockOrderRepo, _, _, service := setupOrderTest()
-
-		orderID := 1
-		mockOrderRepo.On("Delete", ctx, orderID).Return(errors.New("delete failed"))
-
-		err := service.DeleteOrder(ctx, orderID)
-
-		assert.Error(t, err)
-		mockOrderRepo.AssertExpectations(t)
-	})
-
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/trace"
 	"memrizr/account/entity"
+	"memrizr/account/service"
 	"net/http"
 	"strconv"
 )
@@ -13,10 +14,10 @@ import (
 // Handler struct holds required services for handler to function
 type Handler struct {
 	UserService     entity.UserService
-	CalpriceService entity.CalPriceService
-	ProductService  entity.ProductService
-	OrderService    entity.OrderService
-	StockService    entity.StockService
+	CalpriceService service.CalPriceService
+	ProductService  service.ProductService
+	OrderService    service.OrderService
+	StockService    service.StockService
 	Logger          *logrus.Logger
 	Tracer          trace.Tracer
 }
@@ -26,10 +27,10 @@ type Handler struct {
 type Config struct {
 	R               *gin.Engine
 	UserService     entity.UserService
-	CalpriceService entity.CalPriceService
-	ProductService  entity.ProductService
-	OrderService    entity.OrderService
-	StockService    entity.StockService
+	CalpriceService service.CalPriceService
+	ProductService  service.ProductService
+	OrderService    service.OrderService
+	StockService    service.StockService
 	Logger          *logrus.Logger
 	Tracer          trace.Tracer
 }
