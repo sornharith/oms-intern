@@ -13,21 +13,20 @@ type MockOrderRepository struct {
 
 func (m *MockOrderRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.Order, error) {
 	args := m.Called(ctx, id)
-	order, _ := args.Get(0).(*entity.Order)
-	return order, args.Error(1)
+	return args.Get(0).(*entity.Order), args.Error(1)
 }
 
-func (m *MockOrderRepository) Update(ctx context.Context, order *entity.Order) error {
+func (m *MockOrderRepository) CreateOrder(ctx context.Context, order *entity.Order) (*entity.Order, error) {
 	args := m.Called(ctx, order)
-	return args.Error(0)
+	return args.Get(0).(*entity.Order), args.Error(1)
 }
 
-func (m *MockOrderRepository) Delete(ctx context.Context, id int) error {
+func (m *MockOrderRepository) Update(ctx context.Context, order *entity.Order) (*entity.Order, error) {
+	args := m.Called(ctx, order)
+	return args.Get(0).(*entity.Order), args.Error(1)
+}
+
+func (m *MockOrderRepository) Delete(ctx context.Context, id uuid.UUID) (*entity.Order, error) {
 	args := m.Called(ctx, id)
-	return args.Error(0)
-}
-
-func (m *MockOrderRepository) CreateOrder(ctx context.Context, order *entity.Order) error {
-	args := m.Called(ctx, order)
-	return args.Error(0)
+	return args.Get(0).(*entity.Order), args.Error(1)
 }

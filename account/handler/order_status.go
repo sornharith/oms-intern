@@ -23,13 +23,14 @@ func (h *Handler) UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 	ctx := c.Request.Context()
-	if err := h.OrderService.UpdateOrderStatus(ctx, id, Input.Status); err != nil {
+	res, err := h.OrderService.UpdateOrderStatus(ctx, id, Input.Status)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	} else {
 		c.JSON(http.StatusOK, gin.H{
 			"UpdateOrderStatus": "complete",
-			"orderid":           orderid,
-			"status":            Input.Status,
+			"orderid":           res.OID,
+			"status":            res.Status,
 		})
 	}
 }

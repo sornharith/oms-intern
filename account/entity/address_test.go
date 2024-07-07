@@ -1,38 +1,61 @@
 package entity
 
 import (
-	"github.com/stretchr/testify/assert"
+	apperrors "memrizr/account/entity/apperrors"
 	"testing"
 )
 
-func TestAddress(t *testing.T) {
-	t.Run("Test Init and Price for Domestic Address", func(t *testing.T) {
-		addr := &Address{}
-		addr.Init(AddressDomestic)
+func TestAddress_Price(t *testing.T) {
+	tests := []struct {
+		name          string
+		address       string
+		expectedPrice float64
+		expectedError error
+	}{
+		{
+			name:          "Domestic Address",
+			address:       AddressDomestic,
+			expectedPrice: PriceDomestic,
+			expectedError: nil,
+		},
+		{
+			name:          "International Address",
+			address:       AddressInternational,
+			expectedPrice: PriceInternational,
+			expectedError: nil,
+		},
+		{
+			name:          "Invalid Address",
+			address:       "Unknown",
+			expectedPrice: 0,
+			expectedError: apperrors.NewBadRequest("Incorrect address"),
+		},
+		{
+			name:          "Empty Address",
+			address:       "",
+			expectedPrice: 0,
+			expectedError: apperrors.NewBadRequest("Incorrect address"),
+		},
+	}
 
-		price, err := addr.Price()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			addr := &Address{}
+			addr.Init(test.address)
 
-		assert.NoError(t, err)
-		assert.Equal(t, PriceDomestic, price)
-	})
+			price, err := addr.Price()
 
-	t.Run("Test Init and Price for International Address", func(t *testing.T) {
-		addr := &Address{}
-		addr.Init(AddressInternational)
+			if price != test.expectedPrice {
+				t.Errorf("Price() = %v; want %v", price, test.expectedPrice)
+			}
 
-		price, err := addr.Price()
-
-		assert.NoError(t, err)
-		assert.Equal(t, PriceInternational, price)
-	})
-
-	t.Run("Test Price with Incorrect Address", func(t *testing.T) {
-		addr := &Address{}
-		addr.Init("Unknown")
-
-		price, err := addr.Price()
-
-		assert.Error(t, err)
-		assert.Equal(t, 0.0, price)
-	})
+			if err != nil && test.expectedError == nil {
+				t.Errorf("Price() unexpected error: %v", err)
+			} else if err == nil && test.expectedError != nil {
+				t.Errorf("Price() expected error: %v, got nil", test.expectedError)
+			} else if err != nil && test.expectedError != nil && err.Error() != test.expectedError.Error() {
+				t.Errorf("Price() error = %v; want %v", err, test.expectedError)
+			}
+		})
+	}
 }

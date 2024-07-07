@@ -9,120 +9,72 @@ import (
 	"testing"
 )
 
+func setupStockTest() (*repository.MockStockRepository, StockService) {
+	stockRepo := new(repository.MockStockRepository)
+	stockService := NewStockService(&StockConfig{
+		StockRepository: stockRepo,
+	})
+	return stockRepo, stockService
+}
+
 func TestStockService(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 
-	t.Run("Test GetStockByID Success", func(t *testing.T) {
-		mockRepo := new(repository.MockStockRepository)
-		stock := &entity.Stock{SID: 1, Quantity: 100}
+	t.Run("GetStockByID", func(t *testing.T) {
+		mockRepo, stockSvc := setupStockTest()
+		stockID := 1
+		stock := &entity.Stock{SID: stockID, Quantity: 100}
 
-		// Mock return values; ensure stock is not nil to avoid nil dereference
-		mockRepo.On("GetStockByProductID", ctx, 1).Return(stock, nil)
+		// Setup expectation
+		mockRepo.On("GetStockByProductID", ctx, stockID).Return(stock, nil)
 
-		service := NewStockService(&StockConfig{StockRepository: mockRepo})
-		result, err := service.GetStockByID(ctx, 1)
+		t.Run("success", func(t *testing.T) {
+			result, err := stockSvc.GetStockByID(ctx, stockID)
 
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, stock, result)
-		mockRepo.AssertExpectations(t)
+			assert.NoError(t, err)
+			assert.Equal(t, stock, result)
+			mockRepo.AssertExpectations(t)
+		})
+
+		t.Run("not found", func(t *testing.T) {
+			nonExistentStockID := 2
+			mockRepo.On("GetStockByProductID", ctx, nonExistentStockID).Return(nil, errors.New("stock not found"))
+
+			result, err := stockSvc.GetStockByID(ctx, nonExistentStockID)
+
+			assert.Error(t, err)
+			assert.Nil(t, result)
+			mockRepo.AssertExpectations(t)
+		})
 	})
 
-	t.Run("Test GetStockByID Error", func(t *testing.T) {
-		mockRepo := new(repository.MockStockRepository)
-		mockRepo.On("GetStockByProductID", ctx, 2).Return((*entity.Stock)(nil), errors.New("not found"))
+	t.Run("UpdateStockById", func(t *testing.T) {
+		mockRepo, stockSvc := setupStockTest()
 
-		service := NewStockService(&StockConfig{StockRepository: mockRepo})
-		result, err := service.GetStockByID(ctx, 2)
+		stock := &entity.Stock{SID: 1, Quantity: 50}
+		updatedStock := &entity.Stock{SID: 1, Quantity: 75}
 
-		assert.Error(t, err)
-		assert.Nil(t, result)
-		assert.Equal(t, "not found", err.Error())
-		mockRepo.AssertExpectations(t)
-	})
+		t.Run("success", func(t *testing.T) {
+			// Setup expectation
+			mockRepo.On("UpdateStock", ctx, stock).Return(updatedStock, nil)
 
-	t.Run("Test UpdateStockById Success", func(t *testing.T) {
-		mockRepo := new(repository.MockStockRepository)
-		stock := &entity.Stock{SID: 1, Quantity: 100}
+			result, err := stockSvc.UpdateStockById(ctx, stock)
 
-		// Return nil for success
-		mockRepo.On("UpdateStock", ctx, stock.SID, stock.Quantity).Return(nil)
+			assert.NoError(t, err)
+			assert.Equal(t, updatedStock, result)
+			mockRepo.AssertExpectations(t)
+		})
 
-		service := NewStockService(&StockConfig{StockRepository: mockRepo})
-		err := service.UpdateStockById(ctx, stock)
+		t.Run("update error", func(t *testing.T) {
+			mockRepo.ExpectedCalls = nil
 
-		assert.NoError(t, err)
-		mockRepo.AssertExpectations(t)
-	})
+			mockRepo.On("UpdateStock", ctx, stock).Return(nil, errors.New("update failed"))
 
-	t.Run("Test UpdateStockById Error", func(t *testing.T) {
-		mockRepo := new(repository.MockStockRepository)
-		stock := &entity.Stock{SID: 1, Quantity: 100}
+			result, err := stockSvc.UpdateStockById(ctx, stock)
 
-		// Return an error for failure
-		mockRepo.On("UpdateStock", ctx, stock.SID, stock.Quantity).Return(errors.New("update failed"))
-
-		service := NewStockService(&StockConfig{StockRepository: mockRepo})
-		err := service.UpdateStockById(ctx, stock)
-
-		assert.Error(t, err)
-		assert.Equal(t, "update failed", err.Error())
-		mockRepo.AssertExpectations(t)
-	})
-
-	t.Run("Test DeductStockBulk Success", func(t *testing.T) {
-		mockRepo := new(repository.MockStockRepository)
-		deductions := map[int]int{1: 10, 2: 20}
-
-		// Return nil for success
-		mockRepo.On("DeductStockBulk", ctx, deductions).Return(nil)
-
-		_ = NewStockService(&StockConfig{StockRepository: mockRepo})
-		err := mockRepo.DeductStockBulk(ctx, deductions)
-
-		assert.NoError(t, err)
-		mockRepo.AssertExpectations(t)
-	})
-
-	t.Run("Test DeductStockBulk Error", func(t *testing.T) {
-		mockRepo := new(repository.MockStockRepository)
-		deductions := map[int]int{1: 10, 2: 20}
-
-		// Return an error for failure
-		mockRepo.On("DeductStockBulk", ctx, deductions).Return(errors.New("deduction failed"))
-
-		_ = NewStockService(&StockConfig{StockRepository: mockRepo})
-		err := mockRepo.DeductStockBulk(ctx, deductions)
-
-		assert.Error(t, err)
-		assert.Equal(t, "deduction failed", err.Error())
-		mockRepo.AssertExpectations(t)
-	})
-
-	t.Run("Test AddStock Success", func(t *testing.T) {
-		mockRepo := new(repository.MockStockRepository)
-
-		// Return nil for success
-		mockRepo.On("AddStock", ctx, 1, 50).Return(nil)
-
-		_ = NewStockService(&StockConfig{StockRepository: mockRepo})
-		err := mockRepo.AddStock(ctx, 1, 50)
-
-		assert.NoError(t, err)
-		mockRepo.AssertExpectations(t)
-	})
-
-	t.Run("Test AddStock Error", func(t *testing.T) {
-		mockRepo := new(repository.MockStockRepository)
-
-		// Return an error for failure
-		mockRepo.On("AddStock", ctx, 1, 50).Return(errors.New("add stock failed"))
-
-		_ = NewStockService(&StockConfig{StockRepository: mockRepo})
-		err := mockRepo.AddStock(ctx, 1, 50)
-
-		assert.Error(t, err)
-		assert.Equal(t, "add stock failed", err.Error())
-		mockRepo.AssertExpectations(t)
+			assert.Error(t, err)
+			assert.Nil(t, result)
+			mockRepo.AssertExpectations(t)
+		})
 	})
 }

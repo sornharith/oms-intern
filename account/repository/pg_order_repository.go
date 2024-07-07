@@ -2,14 +2,22 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"log"
 	"memrizr/account/entity"
+	"time"
 )
 
 type orderRepository struct {
 	DB *sqlx.DB
+}
+
+func NewOrderRepository(db *sqlx.DB) OrderRepository {
+	return &orderRepository{
+		DB: db,
+	}
 }
 
 func (r *orderRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.Order, error) {
@@ -22,25 +30,36 @@ func (r *orderRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.Or
 	return &order, err
 }
 
-func (r *orderRepository) Update(ctx context.Context, order *entity.Order) error {
+func (r *orderRepository) Update(ctx context.Context, order *entity.Order) (*entity.Order, error) {
 	query := "UPDATE orders SET status = $1, last_edit = CURRENT_TIMESTAMP WHERE o_id::text = $2;"
 	_, err := r.DB.Exec(query, order.Status, order.OID)
-	return err
+	return order, err
 }
 
-func (r *orderRepository) Delete(ctx context.Context, id int) error {
+func (r *orderRepository) Delete(ctx context.Context, id uuid.UUID) (*entity.Order, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func NewOrderRepository(db *sqlx.DB) *orderRepository {
-	return &orderRepository{
-		DB: db,
-	}
-}
+func (r *orderRepository) CreateOrder(ctx context.Context, order *entity.Order) (*entity.Order, error) {
+	order.CreatedAt = time.Now()
+	order.LastEdit = time.Now()
 
-func (r *orderRepository) CreateOrder(ctx context.Context, order *entity.Order) error {
 	query := `INSERT INTO orders (t_id, t_price, status, create_at, last_edit) 
-              VALUES ($1, $2, $3, $4, $5) RETURNING o_id`
-	return r.DB.QueryRow(query, order.TID, order.TPrice, order.Status, order.CreatedAt, order.LastEdit).Scan(&order.OID)
+              VALUES ($1, $2, $3, $4, $5) 
+              RETURNING o_id`
+
+	// Execute the query and retrieve the order ID
+	row := r.DB.QueryRowContext(ctx, query, order.TID, order.TPrice, order.Status, order.CreatedAt, order.LastEdit)
+
+	var orderID uuid.UUID
+	err := row.Scan(&orderID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve order ID: %w", err)
+	}
+
+	// Assign the retrieved order ID back to the order object
+	order.OID = orderID
+
+	return order, nil
 }

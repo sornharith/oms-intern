@@ -7,26 +7,24 @@ import (
 	"github.com/google/uuid"
 	"log"
 	"memrizr/account/entity"
+	"memrizr/account/repository"
 	service "memrizr/account/service/model"
 	"strings"
-	"time"
 )
 
 type createOrderUsecase struct {
-	calPriceRepo entity.CalPriceRepository
-	orderRepo    entity.OrderRepository
-	stockRepo    entity.StockRepository
+	calPriceRepo repository.CalPriceRepository
+	orderRepo    repository.OrderRepository
+	stockRepo    repository.StockRepository
 }
 
 type CreateOrderconfig struct {
-	CalPriceRepo entity.CalPriceRepository
-	OrderRepo    entity.OrderRepository
-	StockRepo    entity.StockRepository
+	CalPriceRepo repository.CalPriceRepository
+	OrderRepo    repository.OrderRepository
+	StockRepo    repository.StockRepository
 }
 
-var orderId = 3
-
-func NewCreateOrderUsecase(c *CreateOrderconfig) entity.OrderService {
+func NewCreateOrderUsecase(c *CreateOrderconfig) OrderService {
 	return &createOrderUsecase{
 		calPriceRepo: c.CalPriceRepo,
 		orderRepo:    c.OrderRepo,
@@ -64,45 +62,45 @@ func (u *createOrderUsecase) CreateOrder(ctx context.Context, tID uuid.UUID) (*e
 	}
 	// Create the order
 	order := &entity.Order{
-		TID:       tID,
-		TPrice:    calPrice.TPrice,
-		Status:    entity.OrderStatusNew,
-		CreatedAt: time.Now(),
-		LastEdit:  time.Now(),
+		TID:    tID,
+		TPrice: calPrice.TPrice,
+		Status: entity.OrderStatusNew,
 	}
 
-	if err := u.orderRepo.CreateOrder(ctx, order); err != nil {
+	res, err := u.orderRepo.CreateOrder(ctx, order)
+	if err != nil {
 		return nil, err
 	}
 
-	return order, nil
+	return res, nil
 }
 func (u *createOrderUsecase) GetOrderByID(ctx context.Context, id uuid.UUID) (*entity.Order, error) {
 	return u.orderRepo.GetByID(ctx, id)
 }
 
-func (u *createOrderUsecase) UpdateOrderStatus(ctx context.Context, o_id uuid.UUID, status string) error {
+func (u *createOrderUsecase) UpdateOrderStatus(ctx context.Context, o_id uuid.UUID, status string) (*entity.Order, error) {
 	order, err := u.orderRepo.GetByID(ctx, o_id)
 	if err != nil {
 		log.Printf("error getting order by id %d", o_id)
-		return errors.New("invalid input")
+		return nil, errors.New("invalid input")
 	}
+
 	if order.Status == entity.OrderStatusNew && status == entity.OrderStatusPaid {
 		order.Status = status
 	} else if order.IsValidStatus(service.OrderStatus(status)) {
 		log.Printf("status %s", status)
 		order.Status = status
 	} else {
-		return errors.New("invalid order status")
+		return nil, errors.New("invalid order status")
 	}
 
-	err = u.orderRepo.Update(ctx, order)
+	response, err := u.orderRepo.Update(ctx, order)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return response, nil
 }
 
-func (u *createOrderUsecase) DeleteOrder(ctx context.Context, id int) error {
+func (u *createOrderUsecase) DeleteOrder(ctx context.Context, id uuid.UUID) (*entity.Order, error) {
 	return u.orderRepo.Delete(ctx, id)
 }

@@ -5,18 +5,19 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"memrizr/account/entity"
+	"memrizr/account/repository"
 )
 
 type calPriceUsecase struct {
-	calPriceRepo entity.CalPriceRepository
-	productRepo  entity.ProductRepository
+	calPriceRepo repository.CalPriceRepository
+	productRepo  repository.ProductRepository
 }
 type CalpConfig struct {
-	CalPriceRepo entity.CalPriceRepository
-	ProductRepo  entity.ProductRepository
+	CalPriceRepo repository.CalPriceRepository
+	ProductRepo  repository.ProductRepository
 }
 
-func NewCalPriceUsecase(c *CalpConfig) entity.CalPriceService {
+func NewCalPriceUsecase(c *CalpConfig) CalPriceService {
 	return &calPriceUsecase{
 		calPriceRepo: c.CalPriceRepo,
 		productRepo:  c.ProductRepo,
@@ -31,11 +32,11 @@ func (u *calPriceUsecase) GetCalPriceByID(ctx context.Context, id uuid.UUID) (*e
 	return res, nil
 }
 
-func (u *calPriceUsecase) UpdateCalPrice(ctx context.Context, calPrice *entity.CalPrice) error {
+func (u *calPriceUsecase) UpdateCalPrice(ctx context.Context, calPrice *entity.CalPrice) (*entity.CalPrice, error) {
 	return u.calPriceRepo.Update(ctx, calPrice)
 }
 
-func (u *calPriceUsecase) DeleteCalPrice(ctx context.Context, id int) error {
+func (u *calPriceUsecase) DeleteCalPrice(ctx context.Context, id uuid.UUID) (*entity.CalPrice, error) {
 	return u.calPriceRepo.Delete(ctx, id)
 }
 
@@ -64,8 +65,9 @@ func (u *calPriceUsecase) CreateCalPrice(ctx context.Context, calPrice *entity.C
 	// Update the CalPrice entity with the calculated total price
 	calPrice.TPrice = totalPrice
 	// Store in repository
-	if err := u.calPriceRepo.CreateCalPrice(ctx, calPrice); err != nil {
+	res, err := u.calPriceRepo.CreateCalPrice(ctx, calPrice)
+	if err != nil {
 		return nil, err
 	}
-	return calPrice, nil
+	return res, nil
 }
