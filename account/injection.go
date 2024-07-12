@@ -2,13 +2,11 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel"
+	"github.com/sirupsen/logrus"
 	"log"
 	"memrizr/account/handler"
-	"memrizr/account/logger"
 	"memrizr/account/repository"
 	"memrizr/account/service"
-	"memrizr/account/tracing"
 )
 
 // will initialize a handler starting from data sources
@@ -52,14 +50,14 @@ func inject(d *dataSources) (*gin.Engine, error) {
 		ProductRepository: productRepo,
 	})
 
-	logger.Setup()
-	tracerShutdown := tracing.InitTracer()
-	defer tracerShutdown()
-
 	// initialize gin.Engine
 	router := gin.Default()
-
-	//router.Use(logger.GinLogger(log), logger.GinRecovery(log), tracing.GinTracer())
+	logger := logrus.New()
+	logger.SetLevel(logrus.InfoLevel)
+	router.Use(func(c *gin.Context) {
+		c.Set("logger", logger)
+		c.Next()
+	})
 
 	handler.NewHandler(&handler.Config{
 		R:               router,
@@ -68,7 +66,6 @@ func inject(d *dataSources) (*gin.Engine, error) {
 		ProductService:  productService,
 		OrderService:    orderService,
 		StockService:    stockService,
-		Tracer:          otel.Tracer("oms-handler"),
 	})
 
 	return router, nil

@@ -2,3 +2,7 @@
 .idea
 **/.DS_Store
 .data
+
+./account/observability/logger/temp
+./account/observability/tracing/tempo-data
+./account/observability/prometheus/prometheus-data

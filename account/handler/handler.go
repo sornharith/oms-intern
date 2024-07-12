@@ -3,9 +3,13 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel"
 	"memrizr/account/entity"
+	"memrizr/account/handler/middleware"
+	"memrizr/account/observability/logger"
+	"memrizr/account/observability/tracing"
 	"memrizr/account/service"
 	"net/http"
 	"strconv"
@@ -19,7 +23,6 @@ type Handler struct {
 	OrderService    service.OrderService
 	StockService    service.StockService
 	Logger          *logrus.Logger
-	Tracer          trace.Tracer
 }
 
 // Config will hold services that will eventually be injected into this
@@ -31,8 +34,6 @@ type Config struct {
 	ProductService  service.ProductService
 	OrderService    service.OrderService
 	StockService    service.StockService
-	Logger          *logrus.Logger
-	Tracer          trace.Tracer
 }
 
 // NewHandler initializes the handler with required injected services along with http routes
@@ -45,14 +46,19 @@ func NewHandler(c *Config) {
 		ProductService:  c.ProductService,
 		OrderService:    c.OrderService,
 		StockService:    c.StockService,
-		Logger:          c.Logger,
-		Tracer:          c.Tracer,
 	}
 
 	// Create an account group
 	g := c.R
-	//g.Use(logger.GinLogger(h.Logger), logger.GinRecovery(h.Logger), tracing.GinTracer())
+	g.Use(logger.GinLogger(h.Logger), logger.GinRecovery(h.Logger))
+	g.Use(middleware.LoggerMiddleware)
 
+	g.Use(tracing.GinTracer())
+	g.Use(middleware.TracingMiddleware)
+
+	g.GET("/metricsx", gin.WrapH(promhttp.Handler()))
+
+	otel.Tracer("oms-handler")
 	g.GET("/me", h.Me)
 	// for the stock
 	g.GET("/stock/:p_id", h.GetStockbyid)

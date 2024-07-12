@@ -3,7 +3,8 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"memrizr/account/logger"
+	"go.opentelemetry.io/otel"
+	"memrizr/account/observability/logger"
 	"net/http"
 )
 
@@ -45,10 +46,11 @@ func (h *Handler) Me(c *gin.Context) {
 	//c.JSON(http.StatusOK, gin.H{
 	//	"user": u,
 	//})
-	_, span := h.Tracer.Start(c.Request.Context(), "ME")
+	var tracer = otel.GetTracerProvider().Tracer("me")
+	_, span := tracer.Start(c.Request.Context(), "ME")
 	defer span.End()
 
-	logger.LogInfo(h.Logger, "Get Me successfully", logrus.Fields{
+	logger.LogInfo("Get Me successfully", logrus.Fields{
 		"Hi": "success",
 	})
 	c.JSON(http.StatusOK, gin.H{
