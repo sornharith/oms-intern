@@ -14,6 +14,9 @@ services:
       - "5432:5432"
     volumes:
       - "pgdata_account:/var/lib/postgresql/data"
+    networks:
+      - loki
+
 
   account:
     build:
@@ -30,6 +33,9 @@ services:
     volumes:
       - ./account:/go/src/app  # Mount your project directory into the container
     command: reflex -r "\.go$$" -s -- sh -c "go run ./"
+    networks:
+      - loki
+
   read:
     image: grafana/loki:3.0.0
     command: "-config.file=/etc/loki/config.yaml -target=read"
@@ -115,6 +121,8 @@ services:
         - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
         - GF_AUTH_ANONYMOUS_ENABLED=true
         - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+        - GF_AUTH_DISABLE_LOGIN_FORM=true
+        - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor traceQLStreaming metricsSummary
       depends_on:
         - gateway
       entrypoint:
@@ -133,6 +141,14 @@ services:
                 httpHeaderName1: "X-Scope-OrgID"
               secureJsonData:
                 httpHeaderValue1: "tenant1"
+            - name: Tempo
+              type: tempo
+              access: proxy
+              url: http://tempo:3200
+            - name: Prometheus
+              type: prometheus
+              access: proxy
+              url: http://prometheus:9090
           EOF
           /run.sh
       ports:
@@ -232,34 +248,70 @@ services:
     image: grafana/promtail:2.5.0
     volumes:
       - ./config/promtail-config.yaml:/etc/promtail/config.yaml
-      - ./account/logger/temp:/var/log
+      - ./account/observability/logger/temp:/var/log
       - /var/run/docker.sock:/var/run/docker.sock
     command: -config.file=/etc/promtail/config.yaml
     networks:
       - loki
 
-  init:
-    image: &tempoImage grafana/tempo:latest
-    user: root
-    entrypoint:
-      - "chown"
-      - "10001:10001"
-      - "/var/tempo"
-    volumes:
-      - ./tempo-data:/var/tempo
   tempo:
-    image: *tempoImage
+    image: grafana/tempo:latest
     command: [ "-config.file=/etc/tempo.yaml" ]
-    volumes:
-      - ../shared/tempo.yaml:/etc/tempo.yaml
-      - ./tempo-data:/var/tempo
     ports:
-      - "3200:3200"   # tempo
-      - "9095:9095" # tempo grpc
-      - "4317:4317"  # otlp grpc
-      - "4318:4318"  # otlp http
+#      - "14268:14268"    # Jaeger ingest
+      - "3200:3200"      # Tempo
+      - "9095:9095"      # Tempo gRPC
+      - "4317:4317"      # OTLP gRPC
+      - "4318:4318"      # OTLP HTTP
+#      - "9411:9411"      # Zipkin
     depends_on:
-      - init
+      - gateway
+    user: root
+    networks:
+      - loki
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4317/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      - TEMPO_STORAGE_COMPACT_STRATEGY=blocks
+      - TEMPO_STORAGE_COMPACT_RETENTION=12h
+      - TEMPO_STORAGE_COMPACT_BLOCK_SIZE=15m
+      - TEMPO_STORAGE_COMPACT_COMPRESSION_LEVEL=9
+      - TEMPO_RECEIVER_OTLP_PROTOCOL_PORT=4318
+      - TEMPO_RECEIVER_OTLP_PROTOCOL_HOST=0.0.0.0
+      - TEMPO_STORAGE_LOCAL_DIRECTORY=/var/tempo
+    volumes:
+      - ./config/tempo-config.yaml:/etc/tempo.yaml
+      - ./account/observability/tracing/tempo-data:/var/tempo
+
+#  flog:
+#    image: mingrammer/flog
+#    command: -f json -d 200ms -l
+#    networks:
+#      - loki
+
+  prometheus:
+    image: prom/prometheus:v2.30.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus-config.yaml:/etc/prometheus/prometheus.yaml
+      - ./account/observability/prometheus/prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yaml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    depends_on:
+      - gateway
+#    network_mode: host
+    networks:
+      - loki
+    user: root
+
+
+
 volumes:
   pgdata_account:
 

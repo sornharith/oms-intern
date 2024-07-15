@@ -2,7 +2,11 @@ package main
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	"log"
+	"memrizr/account/observability/logger"
+	"memrizr/account/observability/prometheus"
+	"memrizr/account/observability/tracing"
 	"net/http"
 	"os"
 	"os/signal"
@@ -25,6 +29,24 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failure to inject data sources: %v\n", err)
 	}
+
+	logger.Setup()
+	defer func(logFile *os.File) {
+		err := logFile.Close()
+		if err != nil {
+			logger.LogError(err, "Failed to close log file", logrus.Fields{"module": "main", "function": "main"})
+		}
+	}(logger.LogFile)
+
+	fields := logrus.Fields{"module": "main", "function": "main"}
+	logger.LogInfo("Service started", fields)
+
+	err = tracing.InitTracer()
+	if err != nil {
+		log.Fatalf("failed to initialize OpenTelemetry: %v", err)
+	}
+
+	prometheus.InitMetrics()
 
 	srv := &http.Server{
 		Addr:    ":8080",
