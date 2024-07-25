@@ -21,6 +21,8 @@ import (
 
 func InitTracer() error {
 	// Set up logger
+	tempopath := os.Getenv("TEMPO")
+	
 	logger := stdr.New(log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile))
 	otel.SetLogger(logger)
 
@@ -30,12 +32,11 @@ func InitTracer() error {
 		propagation.Baggage{},
 	)
 	otel.SetTextMapPropagator(propagator)
-
 	// Set up trace provider
 	ctx := context.Background()
 	traceExporter, err := otlptrace.New(ctx, otlptracehttp.NewClient(
 		otlptracehttp.WithInsecure(),
-		otlptracehttp.WithEndpoint("tempo:4318"),
+		otlptracehttp.WithEndpoint(tempopath),
 	))
 	if err != nil {
 		return err

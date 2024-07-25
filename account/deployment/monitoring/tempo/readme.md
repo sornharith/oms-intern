@@ -1,0 +1,1 @@
+helm install -n monitoring tempo grafana/tempo -f values.yaml

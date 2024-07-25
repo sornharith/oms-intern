@@ -1,18 +1,20 @@
 package handler
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel"
 	"memrizr/account/entity"
 	"memrizr/account/handler/middleware"
 	"memrizr/account/observability/logger"
 	"memrizr/account/observability/tracing"
 	"memrizr/account/service"
 	"net/http"
+	"os"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
 )
 
 // Handler struct holds required services for handler to function
@@ -22,7 +24,6 @@ type Handler struct {
 	ProductService  service.ProductService
 	OrderService    service.OrderService
 	StockService    service.StockService
-	Logger          *logrus.Logger
 }
 
 // Config will hold services that will eventually be injected into this
@@ -47,10 +48,20 @@ func NewHandler(c *Config) {
 		OrderService:    c.OrderService,
 		StockService:    c.StockService,
 	}
+	logger.Setup()
+	
+	defer func(logFile *os.File) {
+		err := logFile.Close()
+		if err != nil {
+			logger.LogError(err, "Failed to close log file", logrus.Fields{"module": "main", "function": "main"})
+		}
+	}(logger.LogFile)
 
+	fields := logrus.Fields{"module": "main", "function": "main"}
+	logger.LogInfo("Service started", fields)
 	// Create an account group
 	g := c.R
-	g.Use(logger.GinLogger(h.Logger), logger.GinRecovery(h.Logger))
+	g.Use(logger.GinLogger(logger.Log), logger.GinRecovery(logger.Log))
 	g.Use(middleware.LoggerMiddleware)
 
 	g.Use(tracing.GinTracer())

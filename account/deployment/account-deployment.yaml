@@ -20,9 +20,10 @@ spec:
     spec:
       containers:
         - name: account
-          image: sornharith/account:v0.2.1b # v0.2 for not having log
+          image: sornharith/account:v1.1.0 # v0.2.0b for not having log
           ports:
-            - containerPort: 8080
+            - name: http
+              containerPort: 8080
           env:
             - name: PG_HOST
               value: "postgres-account-postgresql.databases.svc.cluster.local"
@@ -36,6 +37,8 @@ spec:
               value: "postgres"
             - name: PG_SSL
               value: "disable"
+            - name: TEMPO
+              value: tempo.monitoring:4318
 ---
 apiVersion: v1
 kind: Service
@@ -46,7 +49,8 @@ spec:
   selector:
     app: account
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8080
       targetPort: 8080
   type: LoadBalancer
