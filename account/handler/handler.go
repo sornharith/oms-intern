@@ -7,7 +7,7 @@ import (
 	"memrizr/account/observability/tracing"
 	"memrizr/account/service"
 	"net/http"
-	"os"
+	// "os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -50,12 +50,7 @@ func NewHandler(c *Config) {
 	}
 	logger.Setup()
 	
-	defer func(logFile *os.File) {
-		err := logFile.Close()
-		if err != nil {
-			logger.LogError(err, "Failed to close log file", logrus.Fields{"module": "main", "function": "main"})
-		}
-	}(logger.LogFile)
+	
 
 	fields := logrus.Fields{"module": "main", "function": "main"}
 	logger.LogInfo("Service started", fields)

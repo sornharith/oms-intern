@@ -30,7 +30,7 @@ func main() {
 		log.Fatalf("Failure to inject data sources: %v\n", err)
 	}
 
-	logger.Setup()
+	// logger.Setup()
 	defer func(logFile *os.File) {
 		err := logFile.Close()
 		if err != nil {
@@ -38,8 +38,8 @@ func main() {
 		}
 	}(logger.LogFile)
 
-	fields := logrus.Fields{"module": "main", "function": "main"}
-	logger.LogInfo("Service started", fields)
+	// fields := logrus.Fields{"module": "main", "function": "main"}
+	// logger.LogInfo("Service started", fields)
 
 	err = tracing.InitTracer()
 	if err != nil {

@@ -339,3 +339,20 @@
 {"latency":0.000896216,"level":"info","method":"GET","msg":"HTTP response","path":"/metricsx","query":"","remoteIP":"192.168.214.1","status":200,"time":"2024-07-12T09:08:30Z"}
 {"latency":0.005495294,"level":"info","method":"GET","msg":"HTTP response","path":"/metricsx","query":"","remoteIP":"192.168.214.1","status":200,"time":"2024-07-12T09:08:45Z"}
 {"latency":0.001800556,"level":"info","method":"GET","msg":"HTTP response","path":"/metricsx","query":"","remoteIP":"192.168.214.1","status":200,"time":"2024-07-12T09:09:00Z"}
+{"function":"main","level":"info","module":"main","msg":"Service started","time":"2024-07-25T09:18:27Z"}
+{"function":"main","level":"info","module":"main","msg":"Service started","time":"2024-07-25T09:18:27Z"}
+{"Hi":"success","level":"info","msg":"Get Me successfully","time":"2024-07-25T09:18:32Z"}
+{"latency":0.000701074,"level":"info","method":"GET","msg":"HTTP response","path":"/me","query":"","remoteIP":"192.168.214.1","status":200,"time":"2024-07-25T09:18:32Z"}
+{"function":"main","level":"info","module":"main","msg":"Service started","time":"2024-07-25T09:24:31Z"}
+{"function":"main","level":"info","module":"main","msg":"Service started","time":"2024-07-25T09:27:07Z"}
+{"function":"main","level":"info","module":"main","msg":"Service started","time":"2024-07-25T09:27:15Z"}
+{"function":"main","level":"info","module":"main","msg":"Service started","time":"2024-07-25T09:28:52Z"}
+{"function":"main","level":"info","module":"main","msg":"Service started","time":"2024-07-25T09:29:48Z"}
+{"function":"main","level":"info","module":"main","msg":"Service started","time":"2024-07-25T09:34:06Z"}
+{"Hi":"success","level":"info","msg":"Get Me successfully","time":"2024-07-25T09:34:09Z"}
+{"latency":0.000382406,"level":"info","method":"GET","msg":"HTTP response","path":"/me","query":"","remoteIP":"192.168.214.1","status":200,"time":"2024-07-25T09:34:09Z"}
+{"clientIP":"192.168.214.1","dataLength":43,"hostname":"065d0b3fe9fd","latency":1,"level":"info","method":"GET","msg":"192.168.214.1 - 065d0b3fe9fd [25/Jul/2024:09:34:09 +0000] \"GET /me\" 200 43 \"\" \"PostmanRuntime/7.40.0\" (1ms)","path":"/me","referer":"","statusCode":200,"time":"2024-07-25T09:34:09Z","userAgent":"PostmanRuntime/7.40.0"}
+{"function":"main","level":"info","module":"main","msg":"Service started","time":"2024-07-25T17:01:42Z"}
+{"Hi":"success","level":"info","msg":"Get Me successfully","time":"2024-07-25T17:02:03Z"}
+{"latency":0.000965709,"level":"info","method":"GET","msg":"HTTP response","path":"/me","query":"","remoteIP":"192.168.214.1","status":200,"time":"2024-07-25T17:02:03Z"}
+{"clientIP":"192.168.214.1","dataLength":43,"hostname":"065d0b3fe9fd","latency":2,"level":"info","method":"GET","msg":"192.168.214.1 - 065d0b3fe9fd [25/Jul/2024:17:02:03 +0000] \"GET /me\" 200 43 \"\" \"PostmanRuntime/7.40.0\" (2ms)","path":"/me","referer":"","statusCode":200,"time":"2024-07-25T17:02:03Z","userAgent":"PostmanRuntime/7.40.0"}
