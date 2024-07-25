@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
+	// "github.com/sirupsen/logrus"
 	"log"
 	"memrizr/account/handler"
 	"memrizr/account/repository"
@@ -52,12 +52,12 @@ func inject(d *dataSources) (*gin.Engine, error) {
 
 	// initialize gin.Engine
 	router := gin.Default()
-	logger := logrus.New()
-	logger.SetLevel(logrus.InfoLevel)
-	router.Use(func(c *gin.Context) {
-		c.Set("logger", logger)
-		c.Next()
-	})
+	// logger := logrus.New()
+	// logger.SetLevel(logrus.InfoLevel)
+	// router.Use(func(c *gin.Context) {
+	// 	c.Set("logger", logger)
+	// 	c.Next()
+	// })
 
 	handler.NewHandler(&handler.Config{
 		R:               router,

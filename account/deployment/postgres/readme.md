@@ -1,0 +1,1 @@
+helm install postgres-account bitnami/postgresql -f values.yaml --namespace databases --set persistence.existingClaim=postgres-pvc --set volumePermissions.enabled=true --set primary.pgHbaConfiguration="host all all 0.0.0.0/0 trust"  
