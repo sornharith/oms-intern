@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: deploy
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: account
+  namespace: deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: account
+  template:
+    metadata:
+      labels:
+        app: account
+    spec:
+      containers:
+        - name: account
+          image: sornharith/account:v0.2.1b # v0.2 for not having log
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PG_HOST
+              value: "postgres-account-postgresql.databases.svc.cluster.local"
+            - name: PG_PORT
+              value: "5432"
+            - name: PG_USER
+              value: "postgres"
+            - name: PG_PASSWORD
+              value: "password"
+            - name: PG_DB
+              value: "postgres"
+            - name: PG_SSL
+              value: "disable"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: account
+  namespace: deploy
+spec:
+  selector:
+    app: account
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: LoadBalancer
