@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"memrizr/account/entity"
 	service "memrizr/account/service/model"
+
+	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
 )
 
 type CalPriceService interface {
@@ -22,10 +24,12 @@ type OrderService interface {
 }
 
 type ProductService interface {
-	GetallProductwithstock() ([]service.ProductStock, error)
+	GetallProductwithstock(ctx context.Context) ([]service.ProductStock, error)
 }
 
 type StockService interface {
 	GetStockByID(ctx context.Context, id int) (*entity.Stock, error)
 	UpdateStockById(ctx context.Context, stock *entity.Stock) (*entity.Stock, error)
 }
+
+var tracer = otel.GetTracerProvider().Tracer("service_layer")

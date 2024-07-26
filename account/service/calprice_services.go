@@ -25,7 +25,10 @@ func NewCalPriceUsecase(c *CalpConfig) CalPriceService {
 }
 
 func (u *calPriceUsecase) GetCalPriceByID(ctx context.Context, id uuid.UUID) (*entity.CalPrice, error) {
-	res, err := u.calPriceRepo.GetByID(ctx, id)
+	cts, span := tracer.Start(ctx, "service get-stock-by-id")
+	defer span.End()
+	
+	res, err := u.calPriceRepo.GetByID(cts, id)
 	if err != nil {
 		return nil, err
 	}
@@ -41,6 +44,8 @@ func (u *calPriceUsecase) DeleteCalPrice(ctx context.Context, id uuid.UUID) (*en
 }
 
 func (u *calPriceUsecase) CreateCalPrice(ctx context.Context, calPrice *entity.CalPrice) (*entity.CalPrice, error) {
+	ctx, span := tracer.Start(ctx, "service create-calprice")
+	defer span.End()
 	// Convert UserSelect JSON string back to []map[string]interface{}
 	var userSelect []map[string]interface{}
 	if err := json.Unmarshal([]byte(calPrice.UserSelect), &userSelect); err != nil {

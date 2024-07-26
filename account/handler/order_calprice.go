@@ -13,6 +13,9 @@ type CreateCalPriceInput struct {
 }
 
 func (h *Handler) CreateCalPrice(c *gin.Context) {
+	ctx, span := tracer.Start(c.Request.Context(), "handler create-calprice")
+	defer span.End()
+	
 	var input CreateCalPriceInput
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -35,7 +38,7 @@ func (h *Handler) CreateCalPrice(c *gin.Context) {
 		UserSelect: string(userSelectJSON),
 		Address:    input.Address,
 	}
-	ctx := c.Request.Context()
+
 	createdCalPrice, err := h.CalpriceService.CreateCalPrice(ctx, &calPrice)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

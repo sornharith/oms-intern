@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"memrizr/account/entity"
 	"strings"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type stockRepository struct {
@@ -20,6 +21,9 @@ func NewStockRepository(db *sqlx.DB) StockRepository {
 }
 
 func (r *stockRepository) GetStockByProductID(ctx context.Context, productID int) (*entity.Stock, error) {
+	_, span := tracer.Start(ctx, "repository get-stock-by-product-id")
+	defer span.End()
+
 	var stock entity.Stock
 	err := r.DB.Get(&stock, `SELECT s.s_id as SID, s.quantity as Quantity FROM stocks s 
                              JOIN products p ON s.s_id = p.s_id 
@@ -63,6 +67,8 @@ func (r *stockRepository) DeductStock(ctx context.Context, productID int, amount
 //}
 
 func (r *stockRepository) DeductStockBulk(ctx context.Context, deductions map[int]int) error {
+	_, span := tracer.Start(ctx, "repository deduct-stock-bulk")
+	defer span.End()
 	if len(deductions) == 0 {
 		return nil
 	}
@@ -164,6 +170,9 @@ func (r *stockRepository) DeductStockBulk(ctx context.Context, deductions map[in
 }
 
 func (r *stockRepository) UpdateStock(ctx context.Context, stock *entity.Stock) (*entity.Stock, error) {
+	_, span := tracer.Start(ctx, "repository update-stock")
+	defer span.End()
+
 	// Corrected SQL query with parameters in the right order
 	query := `UPDATE stocks SET quantity = $1 WHERE s_id = $2`
 
