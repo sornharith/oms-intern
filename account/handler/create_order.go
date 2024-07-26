@@ -11,6 +11,9 @@ type CreateOrderInput struct {
 }
 
 func (h *Handler) CreateOrder(c *gin.Context) {
+	ctx, span := tracer.Start(c.Request.Context(), "handler create-order")
+	defer span.End()
+	
 	var input CreateOrderInput
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -21,7 +24,7 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	ctx := c.Request.Context()
+	
 	order, err := h.OrderService.CreateOrder(ctx, input.TID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

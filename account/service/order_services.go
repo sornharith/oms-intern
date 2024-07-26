@@ -33,6 +33,8 @@ func NewCreateOrderUsecase(c *CreateOrderconfig) OrderService {
 }
 
 func (u *createOrderUsecase) CreateOrder(ctx context.Context, tID uuid.UUID) (*entity.Order, error) {
+	ctx, span := tracer.Start(ctx, "service get-stock-by-id")
+	defer span.End()
 	// Fetch transaction details
 	calPrice, err := u.calPriceRepo.GetByID(ctx, tID)
 	if err != nil {
@@ -75,10 +77,16 @@ func (u *createOrderUsecase) CreateOrder(ctx context.Context, tID uuid.UUID) (*e
 	return res, nil
 }
 func (u *createOrderUsecase) GetOrderByID(ctx context.Context, id uuid.UUID) (*entity.Order, error) {
+	ctx, span := tracer.Start(ctx, "service get-stock-by-id")
+	defer span.End()
+
 	return u.orderRepo.GetByID(ctx, id)
 }
 
 func (u *createOrderUsecase) UpdateOrderStatus(ctx context.Context, o_id uuid.UUID, status string) (*entity.Order, error) {
+	ctx, span := tracer.Start(ctx, "service update-order-status")
+	defer span.End()
+
 	order, err := u.orderRepo.GetByID(ctx, o_id)
 	if err != nil {
 		log.Printf("error getting order by id %d", o_id)

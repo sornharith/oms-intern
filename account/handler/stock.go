@@ -18,6 +18,9 @@ type StockOutput struct {
 }
 
 func (h *Handler) updateStock(c *gin.Context) {
+	ctx, span := tracer.Start(c.Request.Context(), "handler update-stock")
+	defer span.End()
+
 	var input StockInput
 	sid := c.Param("p_id")
 	id, err := strconv.Atoi(sid)
@@ -40,7 +43,7 @@ func (h *Handler) updateStock(c *gin.Context) {
 		SID:      id,
 		Quantity: input.Quantity,
 	}
-	ctx := c.Request.Context()
+
 	res, err := h.StockService.UpdateStockById(ctx, &stock)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

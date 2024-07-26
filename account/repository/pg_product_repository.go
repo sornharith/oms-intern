@@ -1,8 +1,10 @@
 package repository
 
 import (
-	"github.com/jmoiron/sqlx"
+	"context"
 	service "memrizr/account/service/model"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type productRepository struct {
@@ -15,8 +17,9 @@ func NewProductRepository(db *sqlx.DB) ProductRepository {
 	}
 }
 
-func (p productRepository) GetallProductStock() ([]service.ProductStock, error) {
-
+func (p productRepository) GetallProductStock(ctx context.Context) ([]service.ProductStock, error) {
+	_, span := tracer.Start(ctx, "repository get-product-with-stock")
+	defer span.End()
 	var product []service.ProductStock
 
 	query := `SELECT p.p_id AS ProductId, s.s_id AS StockId, s.quantity AS Quantity

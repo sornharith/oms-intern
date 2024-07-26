@@ -25,6 +25,8 @@ func NewCalPriceRepository(db *sqlx.DB) CalPriceRepository {
 }
 
 func (r *calPriceRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.CalPrice, error) {
+	_, span := tracer.Start(ctx, "repository get-calprice-by-id")
+	defer span.End()
 	var calPrice entity.CalPrice
 	err := r.DB.Get(&calPrice, "SELECT t_id as TID,t_price as TPrice, user_select as UserSelect, address as Address FROM calprice WHERE t_id::text=$1", id)
 	if err != nil {
@@ -51,6 +53,9 @@ func (r *calPriceRepository) Delete(ctx context.Context, id uuid.UUID) (*entity.
 	return res, err
 }
 func (r *calPriceRepository) CalculateTotalPrice(ctx context.Context, userSelect []map[string]interface{}) (float64, error) {
+	_, span := tracer.Start(ctx, "repository calculate-total-price")
+	defer span.End()
+
 	var totalPrice float64
 	var price float64
 	for _, item := range userSelect {
@@ -68,6 +73,8 @@ func (r *calPriceRepository) CalculateTotalPrice(ctx context.Context, userSelect
 }
 
 func (r *calPriceRepository) CreateCalPrice(ctx context.Context, calPrice *entity.CalPrice) (*entity.CalPrice, error) {
+	_, span := tracer.Start(ctx, "repository create-calprice")
+	defer span.End()
 	userSelectJSON, err := json.Marshal(calPrice.UserSelect)
 	if err != nil {
 		return nil, err

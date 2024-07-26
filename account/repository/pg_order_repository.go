@@ -21,6 +21,9 @@ func NewOrderRepository(db *sqlx.DB) OrderRepository {
 }
 
 func (r *orderRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.Order, error) {
+	_, span := tracer.Start(ctx, "repository get-stock-by-id")
+	defer span.End()
+
 	var order entity.Order
 	err := r.DB.Get(&order, "SELECT o_id as OID, t_id as TID, t_price as TPrice, status as Status, create_at as CreatedAt, last_edit as LastEdit FROM orders WHERE o_id::text = $1", id)
 	if err != nil {
@@ -31,6 +34,9 @@ func (r *orderRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.Or
 }
 
 func (r *orderRepository) Update(ctx context.Context, order *entity.Order) (*entity.Order, error) {
+	_, span := tracer.Start(ctx, "repository update-order")
+	defer span.End()
+
 	query := "UPDATE orders SET status = $1, last_edit = CURRENT_TIMESTAMP WHERE o_id::text = $2;"
 	_, err := r.DB.Exec(query, order.Status, order.OID)
 	return order, err
@@ -42,6 +48,9 @@ func (r *orderRepository) Delete(ctx context.Context, id uuid.UUID) (*entity.Ord
 }
 
 func (r *orderRepository) CreateOrder(ctx context.Context, order *entity.Order) (*entity.Order, error) {
+	_, span := tracer.Start(ctx, "repository create-order")
+	defer span.End()
+
 	order.CreatedAt = time.Now()
 	order.LastEdit = time.Now()
 

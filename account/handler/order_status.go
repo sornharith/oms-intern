@@ -11,6 +11,9 @@ type Updateorderstatus struct {
 }
 
 func (h *Handler) UpdateOrderStatus(c *gin.Context) {
+	ctx, span := tracer.Start(c.Request.Context(), "handler update-order-status")
+	defer span.End()
+	
 	var Input Updateorderstatus
 	var orderid = c.Param("o_id")
 	if err := c.ShouldBindJSON(&Input); err != nil {
@@ -22,7 +25,6 @@ func (h *Handler) UpdateOrderStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid orderid"})
 		return
 	}
-	ctx := c.Request.Context()
 	res, err := h.OrderService.UpdateOrderStatus(ctx, id, Input.Status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

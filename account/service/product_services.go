@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"memrizr/account/repository"
 	service "memrizr/account/service/model"
 )
@@ -19,6 +20,9 @@ func NewProductService(c *ProductConfig) ProductService {
 	}
 }
 
-func (p productService) GetallProductwithstock() ([]service.ProductStock, error) {
-	return p.ProductRepository.GetallProductStock()
+func (p productService) GetallProductwithstock(ctx context.Context) ([]service.ProductStock, error) {
+	ctx, span := tracer.Start(ctx, "service get-product-with-stock")
+	defer span.End()
+
+	return p.ProductRepository.GetallProductStock(ctx)
 }

@@ -7,6 +7,7 @@ import (
 	"memrizr/account/observability/tracing"
 	"memrizr/account/service"
 	"net/http"
+
 	// "os"
 	"strconv"
 
@@ -16,7 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 )
-
+var tracer = otel.GetTracerProvider().Tracer("handler")
 // Handler struct holds required services for handler to function
 type Handler struct {
 	UserService     entity.UserService
@@ -50,8 +51,6 @@ func NewHandler(c *Config) {
 	}
 	logger.Setup()
 	
-	
-
 	fields := logrus.Fields{"module": "main", "function": "main"}
 	logger.LogInfo("Service started", fields)
 	// Create an account group
@@ -86,13 +85,16 @@ func NewHandler(c *Config) {
 }
 
 func (h *Handler) GettransactionbyID(c *gin.Context) {
+	ctx, span := tracer.Start(c.Request.Context(), "handler-get-transaction-by-id")
+	defer span.End()
+	
 	tid := c.Param("t_id")
 	id, err := uuid.Parse(tid)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-	ctx := c.Request.Context()
+
 	calp, err := h.CalpriceService.GetCalPriceByID(ctx, id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -104,6 +106,9 @@ func (h *Handler) GettransactionbyID(c *gin.Context) {
 }
 
 func (h *Handler) GetStockbyid(c *gin.Context) {
+	ctx, span := tracer.Start(c.Request.Context(), "handler get-stock-by-id")
+	defer span.End()
+
 	type Stockoutput struct {
 		Product_id int `json:"product_id"`
 		Stock_id   int `json:"stock_id"`
@@ -115,7 +120,6 @@ func (h *Handler) GetStockbyid(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid productid"})
 		return
 	}
-	ctx := c.Request.Context()
 	stock, err := h.StockService.GetStockByID(ctx, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -132,7 +136,10 @@ func (h *Handler) GetStockbyid(c *gin.Context) {
 }
 
 func (h *Handler) getproduct(c *gin.Context) {
-	product, err := h.ProductService.GetallProductwithstock()
+	ctx, span := tracer.Start(c.Request.Context(), "handler get-all-product")
+	defer span.End()
+
+	product, err := h.ProductService.GetallProductwithstock(ctx)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -143,13 +150,16 @@ func (h *Handler) getproduct(c *gin.Context) {
 }
 
 func (h *Handler) GetorderById(c *gin.Context) {
+	ctx, span := tracer.Start(c.Request.Context(), "handler get-order-by-id")
+	defer span.End()
+
 	oid := c.Param("o_id")
 	id, err := uuid.Parse(oid)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-	ctx := c.Request.Context()
+
 	order, err := h.OrderService.GetOrderByID(ctx, id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
