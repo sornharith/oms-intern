@@ -5,9 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"memrizr/account/entity"
+	apperror "memrizr/account/entity/apperrors"
+	"memrizr/account/observability/logger"
+	"strconv"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/sirupsen/logrus"
 )
 
 type stockRepository struct {
@@ -29,6 +33,9 @@ func (r *stockRepository) GetStockByProductID(ctx context.Context, productID int
                              JOIN products p ON s.s_id = p.s_id 
                              WHERE p.p_id = $1`, productID)
 	if err != nil {
+		logger.LogError(apperror.CusNotFound(strconv.Itoa(productID), "3044"), "not found from this product", logrus.Fields{
+			"at": "repository",
+		})
 		return nil, errors.New("product not found")
 	}
 	return &stock, nil
@@ -69,7 +76,11 @@ func (r *stockRepository) DeductStock(ctx context.Context, productID int, amount
 func (r *stockRepository) DeductStockBulk(ctx context.Context, deductions map[int]int) error {
 	_, span := tracer.Start(ctx, "repository deduct-stock-bulk")
 	defer span.End()
+
 	if len(deductions) == 0 {
+		logger.LogError(apperror.CusBadRequest("no deduction request", "3040"), "no deduction request", logrus.Fields{
+			"at": "repository",
+		})
 		return nil
 	}
 
@@ -111,11 +122,17 @@ func (r *stockRepository) DeductStockBulk(ctx context.Context, deductions map[in
 
 	err := r.DB.Select(&results, queryValidation, params...)
 	if err != nil {
+		logger.LogError(apperror.CusNotFound(err.Error(), "3144"), "error during validation phase", logrus.Fields{
+			"at": "repository",
+		})
 		return fmt.Errorf("error during validation phase: %w", err)
 	}
 
 	for _, result := range results {
 		if result.Quantity < result.Amount {
+			logger.LogError(apperror.CusBadRequest("insufficient stock", "3240"), "error during validation phase", logrus.Fields{
+				"at": "repository",
+			})
 			return fmt.Errorf("insufficient stock for product ID %d: available %d, required %d",
 				result.ProductID, result.Quantity, result.Amount)
 		}
@@ -149,6 +166,9 @@ func (r *stockRepository) DeductStockBulk(ctx context.Context, deductions map[in
 
 	rows, err := r.DB.Queryx(queryUpdate, params...)
 	if err != nil {
+		logger.LogError(apperror.CusBadRequest(err.Error(), "3340"), "error during bulk update phase", logrus.Fields{
+			"at": "repository",
+		})
 		return fmt.Errorf("error during bulk update phase: %w", err)
 	}
 	defer rows.Close()
@@ -163,6 +183,9 @@ func (r *stockRepository) DeductStockBulk(ctx context.Context, deductions map[in
 	}
 
 	if len(updatedProductIDs) != len(deductions) {
+		logger.LogError(apperror.CusBadRequest("insufficient stock", "3440"), "error during bulk update phase", logrus.Fields{
+			"at": "repository",
+		})
 		return errors.New("insufficient stock for one or more products")
 	}
 

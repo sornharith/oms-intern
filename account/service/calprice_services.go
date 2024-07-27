@@ -3,9 +3,13 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"github.com/google/uuid"
 	"memrizr/account/entity"
+	apperror "memrizr/account/entity/apperrors"
+	"memrizr/account/observability/logger"
 	"memrizr/account/repository"
+
+	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type calPriceUsecase struct {
@@ -30,6 +34,9 @@ func (u *calPriceUsecase) GetCalPriceByID(ctx context.Context, id uuid.UUID) (*e
 	
 	res, err := u.calPriceRepo.GetByID(cts, id)
 	if err != nil {
+		logger.LogError(apperror.CusNotFound(id.String(), "2044"), "error from respository", logrus.Fields{
+			"at": "service",
+		})
 		return nil, err
 	}
 	return res, nil
@@ -49,12 +56,18 @@ func (u *calPriceUsecase) CreateCalPrice(ctx context.Context, calPrice *entity.C
 	// Convert UserSelect JSON string back to []map[string]interface{}
 	var userSelect []map[string]interface{}
 	if err := json.Unmarshal([]byte(calPrice.UserSelect), &userSelect); err != nil {
+		logger.LogError(apperror.CusBadRequest("unable to parse user select", "2040"), "unable to parse", logrus.Fields{
+			"at": "service",
+		})
 		return nil, err
 	}
 
 	// Calculate total price
 	totalPrice, err := u.calPriceRepo.CalculateTotalPrice(ctx, userSelect)
 	if err != nil {
+		logger.LogError(apperror.CusBadRequest("unable to calculate total price", "2140"), "unable to calculate", logrus.Fields{
+			"at": "service",
+		})
 		return nil, err
 	}
 	// adding the address price to the total price
@@ -72,6 +85,9 @@ func (u *calPriceUsecase) CreateCalPrice(ctx context.Context, calPrice *entity.C
 	// Store in repository
 	res, err := u.calPriceRepo.CreateCalPrice(ctx, calPrice)
 	if err != nil {
+		logger.LogError(apperror.CusBadRequest("unable to create calprice", "2240"), "unable to create", logrus.Fields{
+			"at": "service",
+		})
 		return nil, err
 	}
 	return res, nil
