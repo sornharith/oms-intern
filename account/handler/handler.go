@@ -14,6 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/penglongli/gin-metrics/ginmetrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
@@ -61,6 +62,10 @@ func NewHandler(c *Config) {
 
 	g.Use(tracing.GinTracer())
 	g.Use(middleware.TracingMiddleware)
+
+	m := ginmetrics.GetMonitor()
+    m.SetMetricPath("/gin-metrics") // Set the gin-metric endpoint to /gin-metrics
+    m.Use(g)
 
 	g.GET("/metricsx", gin.WrapH(promhttp.Handler()))
 

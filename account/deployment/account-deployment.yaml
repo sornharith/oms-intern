@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: account
-          image: sornharith/account:v1.3.0 # v0.2.0b for not having log
+          image: sornharith/account:v1.3.1 # v0.2.0b for not having log
           ports:
             - name: http
               containerPort: 8080
