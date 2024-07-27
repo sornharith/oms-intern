@@ -3,11 +3,14 @@ package repository
 import (
 	"context"
 	"fmt"
+	"memrizr/account/entity"
+	apperror "memrizr/account/entity/apperrors"
+	"memrizr/account/observability/logger"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"log"
-	"memrizr/account/entity"
-	"time"
+	"github.com/sirupsen/logrus"
 )
 
 type orderRepository struct {
@@ -27,7 +30,10 @@ func (r *orderRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.Or
 	var order entity.Order
 	err := r.DB.Get(&order, "SELECT o_id as OID, t_id as TID, t_price as TPrice, status as Status, create_at as CreatedAt, last_edit as LastEdit FROM orders WHERE o_id::text = $1", id)
 	if err != nil {
-		log.Printf("error on querying calprice %v", err.Error())
+		logger.LogError(apperror.CusNotFound("not found order id "+id.String(), "3044"), "not found order", logrus.Fields{
+			"at": "repository",
+		})
+		// log.Printf("error on querying calprice %v", err.Error())
 		return nil, err
 	}
 	return &order, err
@@ -39,6 +45,11 @@ func (r *orderRepository) Update(ctx context.Context, order *entity.Order) (*ent
 
 	query := "UPDATE orders SET status = $1, last_edit = CURRENT_TIMESTAMP WHERE o_id::text = $2;"
 	_, err := r.DB.Exec(query, order.Status, order.OID)
+	if err != nil {
+		logger.LogError(apperror.CusBadRequest("can't update order status", "3040"), "can't update order", logrus.Fields{
+			"at": "repository",
+		})
+	}
 	return order, err
 }
 
@@ -64,6 +75,9 @@ func (r *orderRepository) CreateOrder(ctx context.Context, order *entity.Order) 
 	var orderID uuid.UUID
 	err := row.Scan(&orderID)
 	if err != nil {
+		logger.LogError(apperror.CusBadRequest("can't create order", "3040"), "can't create order", logrus.Fields{
+			"at": "repository",
+		})
 		return nil, fmt.Errorf("failed to retrieve order ID: %w", err)
 	}
 

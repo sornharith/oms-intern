@@ -2,8 +2,12 @@ package service
 
 import (
 	"context"
+	apperror "memrizr/account/entity/apperrors"
+	"memrizr/account/observability/logger"
 	"memrizr/account/repository"
 	service "memrizr/account/service/model"
+
+	"github.com/sirupsen/logrus"
 )
 
 type productService struct {
@@ -24,5 +28,11 @@ func (p productService) GetallProductwithstock(ctx context.Context) ([]service.P
 	ctx, span := tracer.Start(ctx, "service get-product-with-stock")
 	defer span.End()
 
-	return p.ProductRepository.GetallProductStock(ctx)
+	res, err := p.ProductRepository.GetallProductStock(ctx)
+	if err != nil {
+		logger.LogError(apperror.CusNotFound("product is empty", "2044"), "error from respository", logrus.Fields{
+			"at": "service",
+		})
+	}
+	return res, err
 }

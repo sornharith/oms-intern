@@ -24,6 +24,7 @@ const (
 // error type/message from API endpoints
 type Error struct {
 	Type    Type   `json:"type"`
+	Code    string    `json:"code"`
 	Message string `json:"message"`
 }
 
@@ -86,7 +87,13 @@ func NewBadRequest(reason string) *Error {
 		Message: fmt.Sprintf("Bad request. Reason: %v", reason),
 	}
 }
-
+func CusBadRequest(reason string, code string) *Error {
+	return &Error{
+		Type:    BadRequest,
+		Code:    code,
+		Message: fmt.Sprintf("Bad request. Reason: %v", reason),
+	}
+}
 // NewConflict to create an error for 409
 func NewConflict(name string, value string) *Error {
 	return &Error{
@@ -102,7 +109,13 @@ func NewInternal() *Error {
 		Message: fmt.Sprintf("Internal server error."),
 	}
 }
-
+func CusInternal(code string) *Error {
+	return &Error{
+		Type:    Internal,
+		Code:    code,
+		Message: fmt.Sprintf("Internal server error."),
+	}
+}
 // NewNotFound to create an error for 404
 func NewNotFound(name string, value string) *Error {
 	return &Error{
@@ -110,7 +123,13 @@ func NewNotFound(name string, value string) *Error {
 		Message: fmt.Sprintf("resource: %v with value: %v not found", name, value),
 	}
 }
-
+func CusNotFound(name string, code string) *Error {
+	return &Error{
+		Type:    NotFound,
+		Code:    code,
+		Message: fmt.Sprintf("resource: %v not found", name),
+	}
+}
 // NewPayloadTooLarge to create an error for 413
 func NewPayloadTooLarge(maxBodySize int64, contentLength int64) *Error {
 	return &Error{
@@ -118,3 +137,8 @@ func NewPayloadTooLarge(maxBodySize int64, contentLength int64) *Error {
 		Message: fmt.Sprintf("Max payload size of %v exceeded. Actual payload size: %v", maxBodySize, contentLength),
 	}
 }
+
+
+// for the custom error will be xxxx
+// first will be where the error is coming from each error 0x = handler, 1x = service, 2x = repository and second will be which error start from first error is 0
+// last two will be the error code

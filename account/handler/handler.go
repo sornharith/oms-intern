@@ -2,6 +2,7 @@ package handler
 
 import (
 	"memrizr/account/entity"
+	apperror "memrizr/account/entity/apperrors"
 	"memrizr/account/handler/middleware"
 	"memrizr/account/observability/logger"
 	"memrizr/account/observability/tracing"
@@ -91,17 +92,28 @@ func (h *Handler) GettransactionbyID(c *gin.Context) {
 	tid := c.Param("t_id")
 	id, err := uuid.Parse(tid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		// c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		c.JSON(http.StatusBadRequest, apperror.CusBadRequest("invalid id", "0040"))
+		logger.LogError(apperror.CusBadRequest("invalid id", "0040"),"invalid id", logrus.Fields{
+			"At": "handler",
+		})
 		return
 	}
 
 	calp, err := h.CalpriceService.GetCalPriceByID(ctx, id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		// c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, apperror.CusBadRequest(err.Error(), "0140"))
+		logger.LogError(apperror.CusBadRequest(err.Error(), "0140"),"", logrus.Fields{
+			"At": "handler",
+		})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"Transaction information": calp,
+	})
+	logger.LogInfo("Get transaction successfully", logrus.Fields{
+		"TID": tid,
 	})
 }
 
@@ -117,12 +129,20 @@ func (h *Handler) GetStockbyid(c *gin.Context) {
 	pid := c.Param("p_id")
 	id, err := strconv.Atoi(pid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid productid"})
+		// c.JSON(http.StatusBadRequest, gin.H{"error": "invalid productid"})
+		c.JSON(http.StatusBadRequest, apperror.CusBadRequest("invalid productid", "0040"))
+		logger.LogError(apperror.CusBadRequest("invalid productid", "0040"),"invalid productid", logrus.Fields{
+			"At": "handler",
+		})
 		return
 	}
 	stock, err := h.StockService.GetStockByID(ctx, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, apperror.CusBadRequest(err.Error(), "0140"))
+		logger.LogError(apperror.CusBadRequest(err.Error(), "0140"),"", logrus.Fields{
+			"At": "handler",
+		})
 		return
 	}
 	stockresponse := Stockoutput{
@@ -133,6 +153,9 @@ func (h *Handler) GetStockbyid(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"Stock information": stockresponse,
 	})
+	logger.LogInfo("Get stock successfully", logrus.Fields{
+		"PID": pid,
+	})
 }
 
 func (h *Handler) getproduct(c *gin.Context) {
@@ -141,10 +164,17 @@ func (h *Handler) getproduct(c *gin.Context) {
 
 	product, err := h.ProductService.GetallProductwithstock(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, apperror.CusBadRequest(err.Error(), "0040"))
+		logger.LogError(apperror.CusBadRequest(err.Error(), "0040"),"", logrus.Fields{
+			"At": "handler",
+		})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
+		"products": product,
+	})
+	logger.LogInfo("Get product successfully", logrus.Fields{
 		"products": product,
 	})
 }
@@ -156,19 +186,30 @@ func (h *Handler) GetorderById(c *gin.Context) {
 	oid := c.Param("o_id")
 	id, err := uuid.Parse(oid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		// c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		c.JSON(http.StatusBadRequest, apperror.CusBadRequest("invalid id", "0040"))
+		logger.LogError(apperror.CusBadRequest("invalid id", "0040"),"", logrus.Fields{
+			"At": "handler",
+		})
 		return
 	}
 
 	order, err := h.OrderService.GetOrderByID(ctx, id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   err.Error(),
-			"errorid": "400",
+		// c.JSON(http.StatusBadRequest, gin.H{
+		// 	"error":   err.Error(),
+		// 	"errorid": "400",
+		// })
+		c.JSON(http.StatusBadRequest, apperror.CusBadRequest(err.Error(), "0140"))
+		logger.LogError(apperror.CusBadRequest(err.Error(), "0140"),"", logrus.Fields{
+			"At": "handler",
 		})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"Order information": order,
+	})
+	logger.LogInfo("Get order successfully", logrus.Fields{
+		"OID": oid,
 	})
 }

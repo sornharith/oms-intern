@@ -4,12 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/google/uuid"
-	"log"
 	"memrizr/account/entity"
+	apperror "memrizr/account/entity/apperrors"
+	"memrizr/account/observability/logger"
 	"memrizr/account/repository"
 	service "memrizr/account/service/model"
 	"strings"
+
+	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type createOrderUsecase struct {
@@ -38,6 +41,9 @@ func (u *createOrderUsecase) CreateOrder(ctx context.Context, tID uuid.UUID) (*e
 	// Fetch transaction details
 	calPrice, err := u.calPriceRepo.GetByID(ctx, tID)
 	if err != nil {
+		logger.LogError(apperror.CusNotFound(tID.String(), "2044"), "error from respository", logrus.Fields{
+			"at": "service",
+		})
 		return nil, err
 	}
 
@@ -47,6 +53,9 @@ func (u *createOrderUsecase) CreateOrder(ctx context.Context, tID uuid.UUID) (*e
 
 	var userSelect []entity.UserSelectItem
 	if err := json.Unmarshal([]byte(userSelectJSON), &userSelect); err != nil {
+		logger.LogError(apperror.CusBadRequest("unable to parse user select", "2140"), "unable to parse", logrus.Fields{
+			"at": "service",
+		})
 		return nil, errors.New("unable to parse user select: " + err.Error())
 	}
 
@@ -60,6 +69,9 @@ func (u *createOrderUsecase) CreateOrder(ctx context.Context, tID uuid.UUID) (*e
 
 	// Attempt to deduct stock in bulk
 	if err := u.stockRepo.DeductStockBulk(ctx, deductions); err != nil {
+		logger.LogError(apperror.CusBadRequest("unable to deduct stock", "2240"), "unable to deduct", logrus.Fields{
+			"at": "service",
+		})
 		return nil, err
 	}
 	// Create the order
@@ -71,6 +83,9 @@ func (u *createOrderUsecase) CreateOrder(ctx context.Context, tID uuid.UUID) (*e
 
 	res, err := u.orderRepo.CreateOrder(ctx, order)
 	if err != nil {
+		logger.LogError(apperror.CusBadRequest(err.Error(), "2340"), "error from respository", logrus.Fields{
+			"at": "service",
+		})
 		return nil, err
 	}
 
@@ -79,8 +94,14 @@ func (u *createOrderUsecase) CreateOrder(ctx context.Context, tID uuid.UUID) (*e
 func (u *createOrderUsecase) GetOrderByID(ctx context.Context, id uuid.UUID) (*entity.Order, error) {
 	ctx, span := tracer.Start(ctx, "service get-stock-by-id")
 	defer span.End()
-
-	return u.orderRepo.GetByID(ctx, id)
+	
+	res, err := u.orderRepo.GetByID(ctx, id)
+	if err != nil {
+		logger.LogError(apperror.CusNotFound(id.String(), "2044"), "error from respository", logrus.Fields{
+			"at": "service",
+		})
+	}
+	return res, err
 }
 
 func (u *createOrderUsecase) UpdateOrderStatus(ctx context.Context, o_id uuid.UUID, status string) (*entity.Order, error) {
@@ -89,21 +110,32 @@ func (u *createOrderUsecase) UpdateOrderStatus(ctx context.Context, o_id uuid.UU
 
 	order, err := u.orderRepo.GetByID(ctx, o_id)
 	if err != nil {
-		log.Printf("error getting order by id %d", o_id)
+		// log.Printf("error getting order by id %d", o_id)
+		if err != nil {
+			logger.LogError(apperror.CusNotFound(o_id.String(), "2044"), "error from getting order", logrus.Fields{
+				"at": "service",
+			})
+		}
 		return nil, errors.New("invalid input")
 	}
 
 	if order.Status == entity.OrderStatusNew && status == entity.OrderStatusPaid {
 		order.Status = status
 	} else if order.IsValidStatus(service.OrderStatus(status)) {
-		log.Printf("status %s", status)
+		// log.Printf("status %s", status)
 		order.Status = status
 	} else {
+		logger.LogError(apperror.CusBadRequest("invalid order status", "2140"),"", logrus.Fields{
+			"At": "Service",
+		})
 		return nil, errors.New("invalid order status")
 	}
 
 	response, err := u.orderRepo.Update(ctx, order)
 	if err != nil {
+		logger.LogError(apperror.CusNotFound(err.Error(), "2244"), "error repository", logrus.Fields{
+			"at": "service",
+		})
 		return nil, err
 	}
 	return response, nil

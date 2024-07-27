@@ -2,9 +2,12 @@ package repository
 
 import (
 	"context"
+	apperror "memrizr/account/entity/apperrors"
+	"memrizr/account/observability/logger"
 	service "memrizr/account/service/model"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/sirupsen/logrus"
 )
 
 type productRepository struct {
@@ -26,6 +29,10 @@ func (p productRepository) GetallProductStock(ctx context.Context) ([]service.Pr
               FROM products p
               JOIN stocks s ON p.s_id = s.s_id`
 	err := p.DB.Select(&product, query)
-
+	if err != nil {
+		logger.LogError(apperror.CusNotFound("not found product", "3044"), "not found product", logrus.Fields{
+			"at": "repository",
+		})
+	}	
 	return product, err
 }
